@@ -1,0 +1,21 @@
+[{"id":44593236,
+  "user_id":161,
+  "value":32.0,"unit":"cpm", // our measure
+  "location_name":null,"device_id":null,"original_id":null,
+  "measurement_import_id":18114, // need to be unique not to accumulate duplicates!!!!!
+  "captured_at":"2015-03-19T22:40:19.000Z",
+  "height":null, // this parameter is very often null !!!
+  "devicetype_id":null,"sensor_id":null,"station_id":null,"channel_id":null,
+  "latitude":34.499935,"longitude":135.49986 //our location of measurement
+}]
+
+[{"id":44593236,
+  "user_id":161,
+  "value":32.0,"unit":"cpm", // our measure
+
+  "measurement_import_id":18114, // need to be unique not to accumulate duplicates!!!!!
+  "captured_at":"2015-03-19T22:40:19.000Z",
+  "height":null, // this parameter is very often null !!!
+
+  "latitude":34.499935,"longitude":135.49986 //our location of measurement
+}]
