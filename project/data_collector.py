@@ -12,13 +12,16 @@ import math
 import itertools
 import csv
 import os
+
 # import time
 
-START_LATITUDE = 0  # stopien ma stala wartosc dlugosci
-START_LONGITUDE = 0
-HALF_EQUATOR_KM = int(40076000 / 2)  # this is start because we try to capture whole earth in one query
-MAX_IN_SINGLE_QUERY = 25
+# all constances are in meters
+EQUATOR_LENGTH = int(40076000)  # this is start because we try to capture whole earth in one query
+ONE_DEGREE_LATITUDE = 111321
+MERIDIAN_LENGTH = int(ONE_DEGREE_LATITUDE * 180)
 EARTH_RADIUS = 6374000.0
+
+MAX_IN_SINGLE_QUERY = 25
 
 LOG_FILE_PATH = "./logs"
 PROPER_DATA_FILE = "./actual_data.csv"
@@ -81,6 +84,52 @@ class Point:
 
         int_distance = int(EARTH_RADIUS * c) + 1
         return int_distance
+
+    # Something might be slightly wrong
+    @staticmethod
+    def create_earth_grid():
+        grid = []
+        for i in range(0, MERIDIAN_LENGTH, 5000):
+            latitude_degree_north = (-(i / MERIDIAN_LENGTH)*180 + 90) * (math.pi / 180)
+            latitude_degree_south = (-((i + 5000) / MERIDIAN_LENGTH)*180 + 90) * (math.pi / 180)
+
+            longitude_degree_length_north = (math.cos(latitude_degree_north) * EQUATOR_LENGTH) / 360
+            longitude_degree_length_south = (math.cos(latitude_degree_south) * EQUATOR_LENGTH) / 360
+
+            if longitude_degree_length_north > longitude_degree_length_south:
+                longer_longitude_degree = longitude_degree_length_north
+            else:
+                longer_longitude_degree = longitude_degree_length_south
+
+            longer_longitude_perimeter = longer_longitude_degree * 360
+
+            longitude_points = []
+
+            for j in range(0, int(longer_longitude_perimeter), 5000):
+                longitude_points.append((j / longer_longitude_perimeter) * 360)
+
+            # print("####")
+            # print(latitude_degree_north)
+            # print(latitude_degree_south)
+            # print(longitude_degree_length_north)
+            # print(longitude_degree_length_south)
+            # print(longitude_points)
+            # print(longer_longitude_perimeter)
+            # print("####")
+
+            points_north = []
+            points_south = []
+            for longitude in longitude_points:
+                points_north.append(Point(latitude_degree_north, longitude))
+                points_south.append(Point(latitude_degree_south, longitude))
+
+            squares = []
+            for k in range(len(points_south)):
+                squares.append([points_north[k], points_north[(k + 1) % len(points_south)], points_south[k],
+                                points_south[(k + 1) % len(points_south)]])
+
+            grid.extend(squares)
+        return grid
 
     def __str__(self):
         return "##POINT##" + "\n\t#latitude: " + str(self.latitude) + "\n\t#longitude: " + str(self.longitude) + "\n"
@@ -146,8 +195,9 @@ def capture_data_fragment(points):
 
     if len(json_data) == MAX_IN_SINGLE_QUERY:
         with open(LOG_FILE_PATH, "a+") as f:
-            f.write("MANY data in: latitude: {}, longitude: {}, distance: {}\n".format(centre.latitude, centre.longitude,
-                                                                                      distance))
+            f.write(
+                "MANY data in: latitude: {}, longitude: {}, distance: {}\n".format(centre.latitude, centre.longitude,
+                                                                                   distance))
 
         save_to_file(NOT_VALID_DATA_FILE, json_data)
         for subset in itertools.combinations(points, 2):
@@ -159,7 +209,7 @@ def capture_data_fragment(points):
         # TODO: log about fragment without any records
         with open(LOG_FILE_PATH, "a+") as f:
             f.write("No data in: latitude: {}, longitude: {}, distance: {}\n".format(centre.latitude, centre.longitude,
-                                                                                    distance))
+                                                                                     distance))
     else:
         save_to_file(PROPER_DATA_FILE, json_data)
 
@@ -200,4 +250,6 @@ def capture_whole_data():
 
 
 if __name__ == "__main__":
-    capture_whole_data()
+    # capture_whole_data()
+    grid = Point.create_earth_grid()
+    print(len(grid))
