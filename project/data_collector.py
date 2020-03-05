@@ -12,6 +12,7 @@ import math
 import itertools
 import csv
 import os
+from mpl_toolkits.basemap import Basemap
 
 # import time
 
@@ -88,10 +89,11 @@ class Point:
     # Something might be slightly wrong
     @staticmethod
     def create_earth_grid():
+        bm = Basemap(resolution='c', projection='cyl')
         grid = []
         for i in range(0, MERIDIAN_LENGTH, 5000):
-            latitude_degree_north = (-(i / MERIDIAN_LENGTH)*180 + 90) * (math.pi / 180)
-            latitude_degree_south = (-((i + 5000) / MERIDIAN_LENGTH)*180 + 90) * (math.pi / 180)
+            latitude_degree_north = (-(i / MERIDIAN_LENGTH) * 180 + 90) * (math.pi / 180)
+            latitude_degree_south = (-((i + 5000) / MERIDIAN_LENGTH) * 180 + 90) * (math.pi / 180)
 
             longitude_degree_length_north = (math.cos(latitude_degree_north) * EQUATOR_LENGTH) / 360
             longitude_degree_length_south = (math.cos(latitude_degree_south) * EQUATOR_LENGTH) / 360
@@ -108,15 +110,6 @@ class Point:
             for j in range(0, int(longer_longitude_perimeter), 5000):
                 longitude_points.append((j / longer_longitude_perimeter) * 360)
 
-            # print("####")
-            # print(latitude_degree_north)
-            # print(latitude_degree_south)
-            # print(longitude_degree_length_north)
-            # print(longitude_degree_length_south)
-            # print(longitude_points)
-            # print(longer_longitude_perimeter)
-            # print("####")
-
             points_north = []
             points_south = []
             for longitude in longitude_points:
@@ -125,9 +118,13 @@ class Point:
 
             squares = []
             for k in range(len(points_south)):
-                squares.append([points_north[k], points_north[(k + 1) % len(points_south)], points_south[k],
-                                points_south[(k + 1) % len(points_south)]])
-
+                tmp = [points_north[k], points_north[(k + 1) % len(points_south)], points_south[k],
+                       points_south[(k + 1) % len(points_south)]]
+                # checking if the square is on land
+                for t in tmp:
+                    if bm.is_land(t.longitude, t.latitude):
+                        squares.append(tmp)
+                        break
             grid.extend(squares)
         return grid
 
@@ -181,16 +178,10 @@ def save_to_file(file_path, data):
 
 
 def capture_data_fragment(points):
-    # print("*****")
-    # for p in points:
-    #     print(str(p))
-    # time.sleep(1)
-
     centre = Point(points_list=points)
     distance = centre.distance(points[0])
     json_data = send_request(centre=centre, distance=distance)
 
-    # print("****")
     # TODO: if distance is equal 1 we should split through time
 
     if len(json_data) == MAX_IN_SINGLE_QUERY:
@@ -217,29 +208,6 @@ def capture_data_fragment(points):
 def capture_whole_data():
     init_files()
 
-    # Whole earth
-    # end = Point(0.0, 180.0)
-    # centre = Point(0.0, 0.0)
-    #
-    # north = Point(90.0, 0.0)
-    # south = Point(-90.0, 0.0)
-    #
-    # centre_half_east = Point(0.0, 90.0)
-    # centre_half_west = Point(0.0, -90.0)
-    #
-    # for cord1 in [end, centre]:
-    #     for cord2 in [north, south]:
-    #         for cord3 in [centre_half_west, centre_half_east]:
-    #             # print("********************")
-    #             cords = [cord1, cord2, cord3]
-    #             # centre = Point(points_list=cords)
-    #             # print("CORDS:")
-    #             # for c in cords:
-    #             #     print(c)
-    #             # print("CENTRE:")
-    #             # print(str(centre))
-    #             capture_data_fragment(cords)
-
     # Rome
     north = Point(43, 12.4964)
     south = Point(41, 12.4964)
@@ -250,6 +218,6 @@ def capture_whole_data():
 
 
 if __name__ == "__main__":
-    # capture_whole_data()
+    capture_whole_data()
     grid = Point.create_earth_grid()
     print(len(grid))
