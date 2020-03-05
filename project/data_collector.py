@@ -168,6 +168,7 @@ def save_grid(grid):
 
 
 def load_grid():
+    print("Loading data")
     arr = np.load(GRID_FILE_TO_SAVE)
     grid = []
 
@@ -194,6 +195,8 @@ def send_request(centre, distance):
         page += 1
         to_ret.extend(response)
         if len(response) != MAX_IN_SINGLE_QUERY:
+            print(req_url)
+            print(page)
             return to_ret
 
 
@@ -233,11 +236,11 @@ def save_to_file(file_path, log_file, data, centre, distance):
                                                                                                centre.longitude,
                                                                                                distance, len(data)))
 
+
 def capture_data_fragment(points):
     centre = Point(points_list=points)
     distance = centre.distance(points[0])
     json_data = send_request(centre=centre, distance=distance)
-
     save_to_file(PROPER_DATA_FILE, LOG_FILE_PATH, json_data, centre, distance)
 
 
@@ -248,14 +251,67 @@ def create_save_grid():
     print(len(grid))
 
 
-def capture_whole_data(grid):
+# TODO: implement capture data
+def capture_whole_data(grid, threads_number):
+    # print("Capturing data")
+    # queries_count = len(grid)
+    # for t in range(0, len(grid), threads_number):
+    #     # taking squares from <t*threads_number,(t+1)*threads_number)
+    #     if len(grid) < threads_number:
+    #         threads_number = len(grid)
+    #
+    #     top_square = grid[:threads_number]
+    #     grid = grid[threads_number:]
+    #     futures = []
+    #
+    #     with concurrent.futures.ThreadPoolExecutor(max_workers=30) as executor:
+    #         for i in range(threads_number):
+    #             futures.append(executor.submit(capture_data_fragment, top_square[i]))
+    #         concurrent.futures.wait(futures)
+    #     print("Completed {}%", t / queries_count)
+    #
+    #     # we captured all data
+    #     if len(grid) <= threads_number:
+    #         return
+    # # capturing n fragments at the time
+    #
+    # ############################################
+    print("Capturing data")
+    queries_count = len(grid)
+    futures = []
+    with concurrent.futures.ThreadPoolExecutor(max_workers=threads_number) as executor:
+        for t in range(0, len(grid), 1):
+            if len(futures) < threads_number:
+                futures.append(executor.submit(capture_data_fragment, grid[t]))
+            else:
+                concurrent.futures.wait(futures, return_when=concurrent.futures.FIRST_COMPLETED)
+
+                futures_ended = []
+                for fi in range(len(futures)):
+                    if futures[fi].done():
+                        futures_ended.append(futures[fi])
+                futures = [f for f in futures if f not in futures_ended]
+
+                # check which futures completed
+                # remove completed
+                # add as much as i can
+                for j in range(t, threads_number, 1):
+                    futures.append(executor.submit(capture_data_fragment, grid[j]))
+                    t += 1
+            print("Completed {}%".format((t*100)/queries_count))
+
+
+# TODO: steering method implement
+def run():
+    # init logger file
     init_files()
-    for square in grid:
-        capture_data_fragment(square)
+    # init grid
+    if not os.path.exists(GRID_FILE_TO_SAVE):
+        create_save_grid()
+    grid = load_grid()
+    # capturing data
+    capture_whole_data(grid, 100)
 
 
 if __name__ == "__main__":
-    # capture_whole_data()
-    create_save_grid()
-    # grid = load_grid()
-    # print(len(grid))
+    run()
