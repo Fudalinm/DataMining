@@ -307,7 +307,7 @@ def run():
         create_save_grid()
     grid = load_grid()
     # capturing data
-    capture_whole_data(grid, 300)
+    capture_whole_data(grid, 100)
 
 
 if __name__ == "__main__":
