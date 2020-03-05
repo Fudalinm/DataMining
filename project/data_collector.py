@@ -12,6 +12,7 @@ import math
 import itertools
 import csv
 import os
+import numpy as np
 from mpl_toolkits.basemap import Basemap
 
 # import time
@@ -27,6 +28,7 @@ MAX_IN_SINGLE_QUERY = 25
 LOG_FILE_PATH = "./logs"
 PROPER_DATA_FILE = "./actual_data.csv"
 NOT_VALID_DATA_FILE = "./to_much.csv"
+GRID_FILE_TO_SAVE = "./grid.npy"
 ELEMENTS_TO_SAVE = ['id', 'user_id', 'value', 'unit', 'height', 'latitude', 'longitude', 'captured_at',
                     'measurement_import_id']
 
@@ -89,7 +91,9 @@ class Point:
     # Something might be slightly wrong
     @staticmethod
     def create_earth_grid():
-        bm = Basemap(resolution='c', projection='cyl')
+        print("x")
+        bm = Basemap(resolution='c')
+        print("d")
         grid = []
         for i in range(0, MERIDIAN_LENGTH, 5000):
             latitude_degree_north = (-(i / MERIDIAN_LENGTH) * 180 + 90) * (math.pi / 180)
@@ -121,11 +125,38 @@ class Point:
                 tmp = [points_north[k], points_north[(k + 1) % len(points_south)], points_south[k],
                        points_south[(k + 1) % len(points_south)]]
                 # checking if the square is on land
-                for t in tmp:
-                    if bm.is_land(t.longitude, t.latitude):
-                        squares.append(tmp)
-                        break
+
+                if bm.is_land(tmp[0].longitude, tmp[0].latitude):
+                    squares.append(tmp)
+
             grid.extend(squares)
+            print(latitude_degree_south)
+
+        return grid
+
+    @staticmethod
+    def save_grid(grid):
+        # grid = [ [p1,p2,p3,p4] , ....]
+        arr_to_save = np.empty(shape=(len(grid), 4, 2))
+        for square_index in range(len(grid)):
+            square = grid[square_index]
+            for i in range(len(square)):
+                arr_to_save[square_index, i, 0] = square[i].longitude
+                arr_to_save[square_index, i, 1] = square[i].latitude
+        np.save(GRID_FILE_TO_SAVE, arr_to_save)
+
+    @staticmethod
+    def load_grid():
+        arr = np.load(GRID_FILE_TO_SAVE)
+        grid = []
+
+        x, y, z = arr.shape
+        for i in range(x):
+            square = []
+            for j in range(y):
+                p = Point(arr[i, j, 1], arr[i, j, 0])
+                square.append(p)
+            grid.append(square)
         return grid
 
     def __str__(self):
@@ -177,6 +208,7 @@ def save_to_file(file_path, data):
         cw.writerows(data)
 
 
+# TODO: it should only fragment by date not position!!!
 def capture_data_fragment(points):
     centre = Point(points_list=points)
     distance = centre.distance(points[0])
@@ -205,19 +237,22 @@ def capture_data_fragment(points):
         save_to_file(PROPER_DATA_FILE, json_data)
 
 
-def capture_whole_data():
+def create_save_grid():
+    grid = Point.create_earth_grid()
+    Point.save_grid(grid)
+    print(len(grid))
+
+
+def capture_whole_data(grid):
     init_files()
 
-    # Rome
-    north = Point(43, 12.4964)
-    south = Point(41, 12.4964)
-    west = Point(41.9028, 11)
-    east = Point(41.9028, 14)
-    cords = [north, south, east, west]
-    capture_data_fragment(cords)
+    for square in grid:
+        capture_data_fragment(square)
 
 
 if __name__ == "__main__":
-    capture_whole_data()
-    grid = Point.create_earth_grid()
+    # capture_whole_data()
+    # TODO: save grid to some csv?
+    # create_save_grid()
+    grid = Point.load_grid()
     print(len(grid))
