@@ -9,12 +9,12 @@ or try to take records on different dates
 """
 import requests
 import math
-import itertools
 import csv
 import os
 import numpy as np
 from mpl_toolkits.basemap import Basemap
 import concurrent.futures
+import time
 
 # all constances are in meters
 EQUATOR_LENGTH = int(40076000)  # this is start because we try to capture whole earth in one query
@@ -40,23 +40,24 @@ class Point:
             self.latitude = latitude
             self.longitude = longitude
         else:
+            # we need to do it this way because earth is wrapping and there are wiered cases because of that
             if len(points_list) == 1:
                 self.latitude = points_list[0].latitude
                 self.longitude = points_list[0].longitude
                 return
 
-            for subset in itertools.combinations(points_list, 3):
-                if (subset[0].latitude == subset[1].latitude == subset[2].latitude) \
-                        or (subset[0].longitude == subset[1].longitude == subset[2].longitude):
-                    self.longitude = -200
-                    self.latitude = -200
+            # for subset in itertools.combinations(points_list, 3):
+            #     if (subset[0].latitude == subset[1].latitude == subset[2].latitude) \
+            #             or (subset[0].longitude == subset[1].longitude == subset[2].longitude):
+            #         self.longitude = -200
+            #         self.latitude = -200
 
             x = 0.0
             y = 0.0
             z = 0.0
             for p in points_list:
-                radian_latitude = math.radians(p.latitude)
-                radian_longitude = math.radians(p.longitude)
+                radian_latitude = p.latitude*math.pi/180
+                radian_longitude = p.longitude*math.pi/180
 
                 x += math.cos(radian_latitude) * math.cos(radian_longitude)
                 y += math.cos(radian_latitude) * math.sin(radian_longitude)
@@ -76,12 +77,14 @@ class Point:
             self.longitude = central_longitude * 180 / math.pi
             return
 
+    #todo check distance
     def distance(self, second):
-        dlon = math.radians(self.longitude) - math.radians(second.longitude)
-        dlat = math.radians(self.latitude) - math.radians(second.latitude)
+        dlon = self.longitude*math.pi/180 - second.longitude*math.pi/180
+        dlat = self.latitude*math.pi/180 - second.latitude*math.pi/180
 
-        a = math.sin(dlat / 2) ** 2 + math.cos(math.radians(second.latitude)) * math.cos(
-            math.radians(self.latitude)) * math.sin(dlon / 2) ** 2
+        a = math.sin(dlat / 2) ** 2 + \
+            math.cos(second.latitude*math.pi/180) * \
+            math.cos( self.latitude*math.pi/180) * math.sin(dlon / 2) ** 2
         c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 
         int_distance = int(EARTH_RADIUS * c) + 1
@@ -113,14 +116,21 @@ def create_earth_grid(start, end):
         longitude_points = []
 
         for j in range(0, int(longer_longitude_perimeter), 5000):
-            longitude_points.append((j / longer_longitude_perimeter) * 360)
+            lon = (j / longer_longitude_perimeter) * 360
+            if lon > 180:
+                lon -= 360
+            longitude_points.append(lon)
+        longitude_points.sort()
 
+        # print("longitude points: ")
+        # print(longitude_points)
         points_north = []
         points_south = []
         for longitude in longitude_points:
-            points_north.append(Point(latitude_degree_north, longitude))
-            points_south.append(Point(latitude_degree_south, longitude))
+            points_north.append(Point(latitude_degree_north*180/math.pi, longitude))
+            points_south.append(Point(latitude_degree_south*180/math.pi, longitude))
 
+        # print(latitude_degree_south*180/math.pi)
         squares = []
         for k in range(len(points_south)):
             tmp = [points_north[k], points_north[(k + 1) % len(points_south)], points_south[k],
@@ -130,8 +140,13 @@ def create_earth_grid(start, end):
             if bm.is_land(tmp[0].longitude, tmp[0].latitude):
                 squares.append(tmp)
 
-        grid.extend(squares)
+        # for s in squares:
+        #     print("square")
+        #     for p in s:
+        #         print(str(p))
         print(latitude_degree_south)
+        grid.extend(squares)
+
 
     return grid
 
@@ -141,18 +156,15 @@ def create_earth_grid_basic():
 
 
 def create_earth_grid_split():
+    steps = 8
+    step = int(MERIDIAN_LENGTH / steps)
     with concurrent.futures.ProcessPoolExecutor() as executor:
-        step = int(MERIDIAN_LENGTH / 4)
-        g0 = executor.submit(create_earth_grid, step * 0, step * 1)
-        g1 = executor.submit(create_earth_grid, step * 1, step * 2)
-        g2 = executor.submit(create_earth_grid, step * 2, step * 3)
-        g3 = executor.submit(create_earth_grid, step * 3, step * 4)
-
+        results = []
         to_ret = []
-        to_ret.extend(g0.result())
-        to_ret.extend(g1.result())
-        to_ret.extend(g2.result())
-        to_ret.extend(g3.result())
+        for i in range(steps):
+            results.append(executor.submit(create_earth_grid, step * i, step * (i+1)))
+        for g in results:
+            to_ret.extend(g.result())
         return to_ret
 
 
@@ -232,14 +244,22 @@ def save_to_file(file_path, log_file, data, centre, distance):
     else:
         with open(log_file, "a+") as f:
             f.write(
-                "MANY data in: latitude: {}, longitude: {}, distance: {}, data_count\n".format(centre.latitude,
-                                                                                               centre.longitude,
-                                                                                               distance, len(data)))
+                "MANY data in: latitude: {}, longitude: {}, distance: {}, data_count: {}\n".format(centre.latitude,
+                                                                                                   centre.longitude,
+                                                                                                   distance, len(data)))
 
 
 def capture_data_fragment(points):
     centre = Point(points_list=points)
     distance = centre.distance(points[0])
+    # print("######")
+    # for p in points:
+    #     print(str(p))
+    # print("centre")
+    # print(str(centre))
+    # print(distance)
+    # print("######")
+
     json_data = send_request(centre=centre, distance=distance)
     save_to_file(PROPER_DATA_FILE, LOG_FILE_PATH, json_data, centre, distance)
 
@@ -253,29 +273,6 @@ def create_save_grid():
 
 # TODO: implement capture data
 def capture_whole_data(grid, threads_number):
-    # print("Capturing data")
-    # queries_count = len(grid)
-    # for t in range(0, len(grid), threads_number):
-    #     # taking squares from <t*threads_number,(t+1)*threads_number)
-    #     if len(grid) < threads_number:
-    #         threads_number = len(grid)
-    #
-    #     top_square = grid[:threads_number]
-    #     grid = grid[threads_number:]
-    #     futures = []
-    #
-    #     with concurrent.futures.ThreadPoolExecutor(max_workers=30) as executor:
-    #         for i in range(threads_number):
-    #             futures.append(executor.submit(capture_data_fragment, top_square[i]))
-    #         concurrent.futures.wait(futures)
-    #     print("Completed {}%", t / queries_count)
-    #
-    #     # we captured all data
-    #     if len(grid) <= threads_number:
-    #         return
-    # # capturing n fragments at the time
-    #
-    # ############################################
     print("Capturing data")
     queries_count = len(grid)
     futures = []
@@ -298,7 +295,7 @@ def capture_whole_data(grid, threads_number):
                 for j in range(t, threads_number, 1):
                     futures.append(executor.submit(capture_data_fragment, grid[j]))
                     t += 1
-            print("Completed {}%".format((t*100)/queries_count))
+            print("Completed {}%".format((t * 100) / queries_count))
 
 
 # TODO: steering method implement
@@ -310,8 +307,10 @@ def run():
         create_save_grid()
     grid = load_grid()
     # capturing data
-    capture_whole_data(grid, 100)
+    capture_whole_data(grid, 300)
 
 
 if __name__ == "__main__":
     run()
+
+    # create_earth_grid(0,11000)
