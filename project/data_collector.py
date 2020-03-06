@@ -26,11 +26,12 @@ MAX_IN_SINGLE_QUERY = 25
 LOG_FILE_PATH = "./logs"
 PROPER_DATA_FILE = "./actual_data.csv"
 NOT_VALID_DATA_FILE = "./to_much.csv"
-GRID_FILE_TO_SAVE = "./grid.npy"
+GRID_FILE_TO_SAVE = "./data/grid.npy"
 ELEMENTS_TO_SAVE = ['id', 'user_id', 'value', 'unit', 'height', 'latitude', 'longitude', 'captured_at',
                     'measurement_import_id']
 
 front_query = "https://api.safecast.org/measurements.json?"
+
 
 class bcolors:
     OK = '\033[92m'
@@ -41,6 +42,7 @@ class bcolors:
     ENDC = '\033[0m'
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
+
 
 class Point:
     def __init__(self, latitude=-200.0, longitude=-200.0, points_list=[]):
@@ -53,12 +55,6 @@ class Point:
                 self.latitude = points_list[0].latitude
                 self.longitude = points_list[0].longitude
                 return
-
-            # for subset in itertools.combinations(points_list, 3):
-            #     if (subset[0].latitude == subset[1].latitude == subset[2].latitude) \
-            #             or (subset[0].longitude == subset[1].longitude == subset[2].longitude):
-            #         self.longitude = -200
-            #         self.latitude = -200
 
             x = 0.0
             y = 0.0
@@ -85,7 +81,6 @@ class Point:
             self.longitude = central_longitude * 180 / math.pi
             return
 
-    # todo check distance
     def distance(self, second):
         dlon = self.longitude * math.pi / 180 - second.longitude * math.pi / 180
         dlat = self.latitude * math.pi / 180 - second.latitude * math.pi / 180
@@ -103,9 +98,7 @@ class Point:
 
 
 def create_earth_grid(start, end):
-    print("x")
     bm = Basemap(resolution='c')
-    print("d")
     grid = []
     for i in range(start, end, 5000):
         latitude_degree_north = (-(i / MERIDIAN_LENGTH) * 180 + 90) * (math.pi / 180)
@@ -130,15 +123,12 @@ def create_earth_grid(start, end):
             longitude_points.append(lon)
         longitude_points.sort()
 
-        # print("longitude points: ")
-        # print(longitude_points)
         points_north = []
         points_south = []
         for longitude in longitude_points:
             points_north.append(Point(latitude_degree_north * 180 / math.pi, longitude))
             points_south.append(Point(latitude_degree_south * 180 / math.pi, longitude))
 
-        # print(latitude_degree_south*180/math.pi)
         squares = []
         for k in range(len(points_south)):
             tmp = [points_north[k], points_north[(k + 1) % len(points_south)], points_south[k],
@@ -148,10 +138,6 @@ def create_earth_grid(start, end):
             if bm.is_land(tmp[0].longitude, tmp[0].latitude):
                 squares.append(tmp)
 
-        # for s in squares:
-        #     print("square")
-        #     for p in s:
-        #         print(str(p))
         print(latitude_degree_south)
         grid.extend(squares)
 
@@ -222,11 +208,9 @@ def send_request(centre, distance):
     while True:
         req_url = front_query + "distance=" + str(distance) + "&latitude=" + str(centre.latitude) + "&longitude=" \
                   + str(centre.longitude) + "&page=" + str(page)
-        # retry after 2 s if not return it is ugly but it should do the job
         try:
             response = requests.get(req_url, timeout=5).json()
-        except Exception as ex:
-
+        except Exception as e:
             try:
                 response = requests.get(req_url, timeout=5).json()
             except Exception as ex:
@@ -240,9 +224,9 @@ def send_request(centre, distance):
         to_ret.extend(response)
         if len(response) != MAX_IN_SINGLE_QUERY:
             color = bcolors.OK
-            if page == 2:
+            if len(to_ret) <= 0:
                 color = bcolors.WARNING
-            print(color + req_url + bcolors.ENDC)
+            print(color + "LINK: " + bcolors.ENDC + req_url + "\n")
             return to_ret
 
 
@@ -258,7 +242,6 @@ def init_files():
 
 
 def save_to_file(file_path, log_file, data, centre, distance):
-    # TODO: filtering unnecesery fields
     for d in data:
         keys_to_remove = []
         for k in d.keys():
@@ -286,14 +269,6 @@ def save_to_file(file_path, log_file, data, centre, distance):
 def capture_data_fragment(points):
     centre = Point(points_list=points)
     distance = centre.distance(points[0])
-    # print("######")
-    # for p in points:
-    #     print(str(p))
-    # print("centre")
-    # print(str(centre))
-    # print(distance)
-    # print("######")
-
     json_data = send_request(centre=centre, distance=distance)
     save_to_file(PROPER_DATA_FILE, LOG_FILE_PATH, json_data, centre, distance)
 
@@ -305,7 +280,6 @@ def create_save_grid():
     print(len(grid))
 
 
-# TODO: implement capture data
 def capture_whole_data(grid, threads_number):
     print(bcolors.HEADER + "Capturing data" + bcolors.ENDC)
     queries_count = len(grid)
@@ -334,10 +308,19 @@ def capture_whole_data(grid, threads_number):
     return
 
 
-# TODO: steering method implement
 def run(percent_to_download=-1):
-    PROPER_DATA_FILE = "./actual_data{}.csv".format(percent_to_download)
-    # init logger file
+    global PROPER_DATA_FILE
+    global LOG_FILE_PATH
+    global PROPER_DATA_FILE
+    global NOT_VALID_DATA_FILE
+    global DATA_DIR
+
+    DATA_DIR = "./data/"
+    PROPER_DATA_FILE = DATA_DIR + "actual_data{}.csv".format(percent_to_download)
+    LOG_FILE_PATH = DATA_DIR + "logs{}".format(percent_to_download)
+    PROPER_DATA_FILE = DATA_DIR + "actual_data{}.csv".format(percent_to_download)
+    NOT_VALID_DATA_FILE = DATA_DIR + "to_much{}.csv".format(percent_to_download)
+
     init_files()
     # init grid
     if not os.path.exists(GRID_FILE_TO_SAVE):
@@ -350,4 +333,3 @@ def run(percent_to_download=-1):
 if __name__ == "__main__":
     for p in range(1, 20, 1):
         run(p)
-    # create_earth_grid(0,11000)
