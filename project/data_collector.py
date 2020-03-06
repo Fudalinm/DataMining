@@ -14,7 +14,6 @@ import os
 import numpy as np
 from mpl_toolkits.basemap import Basemap
 import concurrent.futures
-import time
 
 # all constances are in meters
 EQUATOR_LENGTH = int(40076000)  # this is start because we try to capture whole earth in one query
@@ -33,6 +32,15 @@ ELEMENTS_TO_SAVE = ['id', 'user_id', 'value', 'unit', 'height', 'latitude', 'lon
 
 front_query = "https://api.safecast.org/measurements.json?"
 
+class bcolors:
+    OK = '\033[92m'
+    PROGRESS = '\033[95m'
+    HEADER = "\033[1;36m"
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
 
 class Point:
     def __init__(self, latitude=-200.0, longitude=-200.0, points_list=[]):
@@ -56,8 +64,8 @@ class Point:
             y = 0.0
             z = 0.0
             for p in points_list:
-                radian_latitude = p.latitude*math.pi/180
-                radian_longitude = p.longitude*math.pi/180
+                radian_latitude = p.latitude * math.pi / 180
+                radian_longitude = p.longitude * math.pi / 180
 
                 x += math.cos(radian_latitude) * math.cos(radian_longitude)
                 y += math.cos(radian_latitude) * math.sin(radian_longitude)
@@ -77,14 +85,14 @@ class Point:
             self.longitude = central_longitude * 180 / math.pi
             return
 
-    #todo check distance
+    # todo check distance
     def distance(self, second):
-        dlon = self.longitude*math.pi/180 - second.longitude*math.pi/180
-        dlat = self.latitude*math.pi/180 - second.latitude*math.pi/180
+        dlon = self.longitude * math.pi / 180 - second.longitude * math.pi / 180
+        dlat = self.latitude * math.pi / 180 - second.latitude * math.pi / 180
 
         a = math.sin(dlat / 2) ** 2 + \
-            math.cos(second.latitude*math.pi/180) * \
-            math.cos( self.latitude*math.pi/180) * math.sin(dlon / 2) ** 2
+            math.cos(second.latitude * math.pi / 180) * \
+            math.cos(self.latitude * math.pi / 180) * math.sin(dlon / 2) ** 2
         c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 
         int_distance = int(EARTH_RADIUS * c) + 1
@@ -127,8 +135,8 @@ def create_earth_grid(start, end):
         points_north = []
         points_south = []
         for longitude in longitude_points:
-            points_north.append(Point(latitude_degree_north*180/math.pi, longitude))
-            points_south.append(Point(latitude_degree_south*180/math.pi, longitude))
+            points_north.append(Point(latitude_degree_north * 180 / math.pi, longitude))
+            points_south.append(Point(latitude_degree_south * 180 / math.pi, longitude))
 
         # print(latitude_degree_south*180/math.pi)
         squares = []
@@ -147,7 +155,6 @@ def create_earth_grid(start, end):
         print(latitude_degree_south)
         grid.extend(squares)
 
-
     return grid
 
 
@@ -162,7 +169,7 @@ def create_earth_grid_split():
         results = []
         to_ret = []
         for i in range(steps):
-            results.append(executor.submit(create_earth_grid, step * i, step * (i+1)))
+            results.append(executor.submit(create_earth_grid, step * i, step * (i + 1)))
         for g in results:
             to_ret.extend(g.result())
         return to_ret
@@ -179,13 +186,25 @@ def save_grid(grid):
     np.save(GRID_FILE_TO_SAVE, arr_to_save)
 
 
-def load_grid():
-    print("Loading data")
+def load_grid(percent_to_download):
+    print(bcolors.HEADER + "Loading data" + bcolors.ENDC)
     arr = np.load(GRID_FILE_TO_SAVE)
     grid = []
 
     x, y, z = arr.shape
-    for i in range(x):
+
+    if percent_to_download < 0:
+        start = 0
+        end = x
+    else:
+        step = int(x / 100)
+        start = step * (percent_to_download - 1)
+        if percent_to_download != 100:
+            end = step * percent_to_download
+        else:
+            end = x
+
+    for i in range(start, end, 1):
         square = []
         for j in range(y):
             p = Point(arr[i, j, 1], arr[i, j, 0])
@@ -203,12 +222,27 @@ def send_request(centre, distance):
     while True:
         req_url = front_query + "distance=" + str(distance) + "&latitude=" + str(centre.latitude) + "&longitude=" \
                   + str(centre.longitude) + "&page=" + str(page)
-        response = requests.get(req_url).json()
+        # retry after 2 s if not return it is ugly but it should do the job
+        try:
+            response = requests.get(req_url, timeout=5).json()
+        except Exception as ex:
+
+            try:
+                response = requests.get(req_url, timeout=5).json()
+            except Exception as ex:
+                with open(LOG_FILE_PATH, "a+") as f:
+                    template = "An exception of type {0} occurred. Arguments:\n{1!r}"
+                    f.write("!!!\nError while downloading data in: "
+                            "latitude: {}, longitude: {}, distance: {}, exception: {}\n!!\n".format(
+                        centre.latitude, centre.longitude, distance, str(template.format(type(ex).__name__, ex.args))))
+                response = []
         page += 1
         to_ret.extend(response)
         if len(response) != MAX_IN_SINGLE_QUERY:
-            print(req_url)
-            print(page)
+            color = bcolors.OK
+            if page == 2:
+                color = bcolors.WARNING
+            print(color + req_url + bcolors.ENDC)
             return to_ret
 
 
@@ -273,7 +307,7 @@ def create_save_grid():
 
 # TODO: implement capture data
 def capture_whole_data(grid, threads_number):
-    print("Capturing data")
+    print(bcolors.HEADER + "Capturing data" + bcolors.ENDC)
     queries_count = len(grid)
     futures = []
     with concurrent.futures.ThreadPoolExecutor(max_workers=threads_number) as executor:
@@ -295,22 +329,25 @@ def capture_whole_data(grid, threads_number):
                 for j in range(t, threads_number, 1):
                     futures.append(executor.submit(capture_data_fragment, grid[j]))
                     t += 1
-            print("Completed {}%".format((t * 100) / queries_count))
+            print(bcolors.PROGRESS + "Completed {}%".format((t * 100) / queries_count) + bcolors.ENDC)
+        concurrent.futures.wait(futures, return_when=concurrent.futures.ALL_COMPLETED)
+    return
 
 
 # TODO: steering method implement
-def run():
+def run(percent_to_download=-1):
+    PROPER_DATA_FILE = "./actual_data{}.csv".format(percent_to_download)
     # init logger file
     init_files()
     # init grid
     if not os.path.exists(GRID_FILE_TO_SAVE):
         create_save_grid()
-    grid = load_grid()
+    grid = load_grid(percent_to_download)
     # capturing data
-    capture_whole_data(grid, 100)
+    capture_whole_data(grid, 300)
 
 
 if __name__ == "__main__":
-    run()
-
+    for p in range(1, 20, 1):
+        run(p)
     # create_earth_grid(0,11000)
