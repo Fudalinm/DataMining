@@ -199,27 +199,15 @@ def load_grid(percent_to_download):
     return grid
 
 
-def send_request(centre, distance):
+def send_request_one_square(centre, distance):
     if centre.latitude > 90 or centre.latitude < -90 or centre.longitude > 180 or centre.longitude < -180:
         return
-
     to_ret = []
     page = 1
     while True:
         req_url = front_query + "distance=" + str(distance) + "&latitude=" + str(centre.latitude) + "&longitude=" \
                   + str(centre.longitude) + "&page=" + str(page)
-        try:
-            response = requests.get(req_url, timeout=5).json()
-        except Exception as e:
-            try:
-                response = requests.get(req_url, timeout=5).json()
-            except Exception as ex:
-                with open(LOG_FILE_PATH, "a+") as f:
-                    template = "An exception of type {0} occurred. Arguments:\n{1!r}"
-                    f.write("!!!\nError while downloading data in: "
-                            "latitude: {}, longitude: {}, distance: {}, exception: {}\n!!\n".format(
-                        centre.latitude, centre.longitude, distance, str(template.format(type(ex).__name__, ex.args))))
-                response = []
+        response = send_single_request(centre, distance, page)
         page += 1
         to_ret.extend(response)
         if len(response) != MAX_IN_SINGLE_QUERY:
@@ -228,6 +216,49 @@ def send_request(centre, distance):
                 color = bcolors.WARNING
             print(color + "LINK: " + bcolors.ENDC + req_url + "\n")
             return to_ret
+        else:
+            if page > 100:
+                to_ret.extend(send_request_multitude_data(centre, distance, pages_paralel=40, start_page=page))
+                print(bcolors.OK + "MULTITUDE LINK: " + bcolors.ENDC + req_url + "\n")
+                return to_ret
+
+
+def send_request_multitude_data(centre, distance, pages_paralel=40, start_page=121):
+    # 30 pages at the same time
+    to_ret = []
+    f_end = False
+    with concurrent.futures.ThreadPoolExecutor(max_workers=pages_paralel) as executor:
+        while True:
+            futures = []
+            for x in range(start_page, start_page + pages_paralel, 1):
+                futures.append(executor.submit(send_single_request(centre, distance, x)))
+            concurrent.futures.wait(futures, return_when=concurrent.futures.ALL_COMPLETED)
+            for f in futures:
+                to_extend = f.result()
+                to_ret.extend(to_extend)
+                if len(to_extend) < MAX_IN_SINGLE_QUERY:
+                    f_end = True
+            start_page += pages_paralel
+            if f_end:
+                return to_ret
+
+
+def send_single_request(centre, distance, page):
+    req_url = front_query + "distance=" + str(distance) + "&latitude=" + str(centre.latitude) + "&longitude=" \
+              + str(centre.longitude) + "&page=" + str(page)
+    try:
+        response = requests.get(req_url, timeout=5).json()
+    except Exception as e:
+        try:
+            response = requests.get(req_url, timeout=5).json()
+        except Exception as ex:
+            with open(LOG_FILE_PATH, "a+") as f:
+                template = "An exception of type {0} occurred. Arguments:\n{1!r}"
+                f.write("!!!\nError while downloading data in: "
+                        "latitude: {}, longitude: {}, distance: {}, exception: {}\n!!\n".format(
+                    centre.latitude, centre.longitude, distance, str(template.format(type(ex).__name__, ex.args))))
+            response = []
+    return response
 
 
 def init_files():
@@ -269,7 +300,7 @@ def save_to_file(file_path, log_file, data, centre, distance):
 def capture_data_fragment(points):
     centre = Point(points_list=points)
     distance = centre.distance(points[0])
-    json_data = send_request(centre=centre, distance=distance)
+    json_data = send_request_one_square(centre=centre, distance=distance)
     save_to_file(PROPER_DATA_FILE, LOG_FILE_PATH, json_data, centre, distance)
 
 
@@ -331,5 +362,5 @@ def run(percent_to_download=-1):
 
 
 if __name__ == "__main__":
-    for p in range(1, 20, 1):
+    for p in range(13, 20, 1):
         run(p)
