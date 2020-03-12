@@ -37,6 +37,10 @@ class globals:
 
 class cities:
     ROME = [(41.75, 12.27), (42.05, 12.73)]
+    ROME_FILE = "./data/processed/Rome"
     TOKYO = [(35.87, 139.45), (35.49, 139.95)]
+    TOKYO_FILE = "./data/processed/Tokyo"
     KRAKOW = [(50.16, 19.7), (49.94, 20.35)]
+    KRAKOW_FILE = "./data/processed/Krakow"
     CZARNOBYL = [(51.31, 30.1), (51.24, 30.34)]
+    CZARNOBYL_FILE = "./data/processed/Czarnobyl"
