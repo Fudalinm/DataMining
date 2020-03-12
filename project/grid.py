@@ -130,12 +130,12 @@ def save_grid(grid):
         for i in range(len(square)):
             arr_to_save[square_index, i, 0] = square[i].longitude
             arr_to_save[square_index, i, 1] = square[i].latitude
-    np.save(globs.globals.GRID_FILE_TO_SAVE, arr_to_save)
+    np.save(globs.globals.GRID_FILE_TO_SAVE_API, arr_to_save)
 
 
 def load_grid(percent_to_download):
     print(globs.bcolors.HEADER + "Loading data" + globs.bcolors.ENDC)
-    arr = np.load(globs.globals.GRID_FILE_TO_SAVE)
+    arr = np.load(globs.globals.GRID_FILE_TO_SAVE_API)
     grid = []
 
     x, y, z = arr.shape

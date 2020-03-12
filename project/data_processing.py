@@ -86,7 +86,7 @@ def proceed_region(city_points, resolution=5000, file_to_save=False):
 
 
 if __name__ == "__main__":
-    # proceed_region(globs.cities.ROME, file_to_save=globs.cities.ROME_FILE)
+    proceed_region(globs.cities.ROME, file_to_save=globs.cities.ROME_FILE)
     proceed_region(globs.cities.TOKYO, file_to_save=globs.cities.TOKYO_FILE)
     proceed_region(globs.cities.KRAKOW, file_to_save=globs.cities.KRAKOW_FILE)
     proceed_region(globs.cities.CZARNOBYL, file_to_save=globs.cities.CZARNOBYL_FILE)

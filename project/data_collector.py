@@ -22,7 +22,7 @@ def send_request_one_square(centre, distance):
     to_ret = []
     page = 1
     while True:
-        req_url = globs.globals.front_query + "distance=" + str(distance) + "&latitude=" + str(
+        req_url = globs.globals.FRONT_QUERY_API + "distance=" + str(distance) + "&latitude=" + str(
             centre.latitude) + "&longitude=" \
                   + str(centre.longitude) + "&page=" + str(page)
         response = send_single_request(centre, distance, page)
@@ -62,7 +62,7 @@ def send_request_multitude_data(centre, distance, pages_paralel=40, start_page=1
 
 
 def send_single_request(centre, distance, page):
-    req_url = globs.globals.front_query + "distance=" + str(distance) + "&latitude=" + str(
+    req_url = globs.globals.FRONT_QUERY_API + "distance=" + str(distance) + "&latitude=" + str(
         centre.latitude) + "&longitude=" \
               + str(centre.longitude) + "&page=" + str(page)
     try:
@@ -71,7 +71,7 @@ def send_single_request(centre, distance, page):
         try:
             response = requests.get(req_url, timeout=5).json()
         except Exception as ex:
-            with open(globs.globals.LOG_FILE_PATH, "a+") as f:
+            with open(globs.globals.LOG_FILE_PATH_API, "a+") as f:
                 template = "An exception of type {0} occurred. Arguments:\n{1!r}"
                 f.write("!!!\nError while downloading data in: "
                         "latitude: {}, longitude: {}, distance: {}, exception: {}\n!!\n".format(
@@ -81,9 +81,9 @@ def send_single_request(centre, distance, page):
 
 
 def init_files():
-    if os.path.exists(globs.globals.LOG_FILE_PATH):
-        os.remove(globs.globals.LOG_FILE_PATH)
-    for path in [globs.globals.PROPER_DATA_FILE, globs.globals.NOT_VALID_DATA_FILE]:
+    if os.path.exists(globs.globals.LOG_FILE_PATH_API):
+        os.remove(globs.globals.LOG_FILE_PATH_API)
+    for path in [globs.globals.PROPER_DATA_FILE_API, globs.globals.NOT_VALID_DATA_FILE_API]:
         if os.path.exists(path):
             os.remove(path)
         with open(path, "w+", newline="") as f:
@@ -122,7 +122,7 @@ def capture_data_fragment(points):
     centre = grid.Point(points_list=points)
     distance = centre.distance(points[0])
     json_data = send_request_one_square(centre=centre, distance=distance)
-    save_to_file(globs.globals.PROPER_DATA_FILE, globs.globals.LOG_FILE_PATH, json_data, centre, distance)
+    save_to_file(globs.globals.PROPER_DATA_FILE_API, globs.globals.LOG_FILE_PATH_API, json_data, centre, distance)
 
 
 def capture_whole_data(grid, threads_number):
@@ -154,15 +154,15 @@ def capture_whole_data(grid, threads_number):
 
 
 def run(percent_to_download=-1):
-    globs.globals.DATA_DIR = "./data/"
-    globs.globals.PROPER_DATA_FILE = globs.globals.DATA_DIR + "actual_data{}.csv".format(percent_to_download)
-    globs.globals.LOG_FILE_PATH = globs.globals.DATA_DIR + "logs{}".format(percent_to_download)
-    globs.globals.PROPER_DATA_FILE = globs.globals.DATA_DIR + "actual_data{}.csv".format(percent_to_download)
-    globs.globals.NOT_VALID_DATA_FILE = globs.globals.DATA_DIR + "to_much{}.csv".format(percent_to_download)
+    globs.globals.DATA_DIR_API = "./data/api/"
+    globs.globals.PROPER_DATA_FILE_API = globs.globals.DATA_DIR_API + "actual_data{}.csv".format(percent_to_download)
+    globs.globals.LOG_FILE_PATH_API = globs.globals.DATA_DIR_API + "logs{}".format(percent_to_download)
+    globs.globals.PROPER_DATA_FILE_API = globs.globals.DATA_DIR_API + "actual_data{}.csv".format(percent_to_download)
+    globs.globals.NOT_VALID_DATA_FILE_API = globs.globals.DATA_DIR_API + "to_much{}.csv".format(percent_to_download)
 
     init_files()
     # init grid
-    if not os.path.exists(globs.globals.GRID_FILE_TO_SAVE):
+    if not os.path.exists(globs.globals.GRID_FILE_TO_SAVE_API):
         grid.create_save_grid()
     g_tmp = grid.load_grid(percent_to_download)
     # capturing data

@@ -35,6 +35,7 @@ def filter_height(path_to_load, path_to_save, columns_to_save):
 def sort_data(path_to_file, columns):
     df = pd.read_csv(path_to_file)
     df.sort_values(axis=0, ascending=True, by=columns, inplace=True)
+    os.remove(path_to_file)
     df.to_csv(path_to_file + 'sorted', header=True, index=False)
 
 
