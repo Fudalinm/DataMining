@@ -4,7 +4,6 @@ import pandas as pd
 import pickle
 from os.path import exists
 from os import remove
-import numpy as np
 
 
 def get_data_region(city_points):
@@ -21,8 +20,6 @@ def get_data_region(city_points):
     chunksize = 10 ** 6
     for chunk in pd.read_csv(globs.globals.DATA_BASE_FILTER_PATH_SORTED, chunksize=chunksize):
         last = chunk['Latitude'].iloc[-1]
-        # latitude_mask = False if chunk['Latitude'].isna() else lat2 <= chunk['Latitude'] <= lat1
-        # latitude_mask = ('Latitude'].isna()) & (chunk['Latitude'].between(lat2,lat1))
         latitude_mask = (~chunk['Latitude'].isna()) & (chunk['Latitude'].between(lat2, lat1))
         latitude_filtered_data = chunk[latitude_mask]
         # Check longitude
@@ -52,7 +49,7 @@ def assign_data_to_square(squares, data):
         lat2 = s[3][0]
         lon1 = s[0][1]
         lon2 = s[3][1]
-        square_mask = (data['Latitude'].between(lat1,lat2)) & (data['Longitude'].between(lon1,lon2))
+        square_mask = (data['Latitude'].between(lat1, lat2)) & (data['Longitude'].between(lon1, lon2))
         to_ret.append((s, data[square_mask]))
     return to_ret
 
@@ -89,7 +86,7 @@ def proceed_region(city_points, resolution=5000, file_to_save=False):
 
 
 if __name__ == "__main__":
-    proceed_region(globs.cities.ROME, file_to_save=globs.cities.ROME_FILE)
+    # proceed_region(globs.cities.ROME, file_to_save=globs.cities.ROME_FILE)
     proceed_region(globs.cities.TOKYO, file_to_save=globs.cities.TOKYO_FILE)
     proceed_region(globs.cities.KRAKOW, file_to_save=globs.cities.KRAKOW_FILE)
     proceed_region(globs.cities.CZARNOBYL, file_to_save=globs.cities.CZARNOBYL_FILE)

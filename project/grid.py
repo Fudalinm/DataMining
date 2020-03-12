@@ -270,9 +270,14 @@ def calculate_distance(p1, p2):
 
 
 if __name__ == "__main__":
+    print(create_grid_for_surface_from_points(globs.cities.TOKYO[0], globs.cities.TOKYO[1]))
+    print(create_grid_for_surface_from_points(globs.cities.ROME[0], globs.cities.ROME[1]))
+    print(create_grid_for_surface_from_points(globs.cities.CZARNOBYL[0], globs.cities.CZARNOBYL[1]))
+    print(create_grid_for_surface_from_points(globs.cities.KRAKOW[0], globs.cities.KRAKOW[1]))
+
     # g = create_grid_for_surface(12.27, 12.73, 42.05, 41.75)
-    g = create_grid_for_surface_from_points((41.75, 12.27), (42.05, 12.73))
-    print(g)
-    for square in g:
-        print("##########")
-        print(square)
+    # g = create_grid_for_surface_from_points((41.75, 12.27), (42.05, 12.73))
+    # print(g)
+    # for square in g:
+    #     print("##########")
+    #     print(square)
