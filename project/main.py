@@ -6,8 +6,8 @@ import data_processing
 if __name__ == "__main__":
     # Preprocessing
     print("Data pre processing phase. It will take more then a while")
-    data_preproccesing.filter_whole_data(globs.globals.DATA_PATH, globs.globals.DATA_BASE_FILTER_PATH)
-    data_preproccesing.filter_height(globs.globals.DATA_BASE_FILTER_PATH, globs.globals.DATA_FILTER_HEIGHT_PATH)
+    data_preproccesing.filter_whole_data(globs.globals.DATA_PATH, globs.globals.DATA_BASE_FILTER_PATH, globs.globals.ELEMENTS_TO_SAVE_CSV)
+    data_preproccesing.filter_height(globs.globals.DATA_BASE_FILTER_PATH, globs.globals.DATA_FILTER_HEIGHT_PATH, globs.globals.ELEMENTS_TO_SAVE_CSV)
     data_preproccesing.sort_data(globs.globals.DATA_BASE_FILTER_PATH, globs.globals.DATA_BASE_FILTER_PATH_SORTED)
     data_preproccesing.sort_data(globs.globals.DATA_FILTER_HEIGHT_PATH, globs.globals.DATA_FILTER_HEIGHT_PATH_SORTED)
     
