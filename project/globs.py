@@ -17,6 +17,12 @@ class globals:
     DATA_FILTER_HEIGHT_PATH_SORTED = "./data/measurementsHeightFilteredSorted.csv"
     ELEMENTS_TO_SAVE_CSV = ['Latitude', 'Longitude', 'Value', 'Unit', 'Height', 'Captured Time']
 
+    MAP_PLOT_DIR = "./data/mapPlots/"
+    MAPS_PLOT_MIN_DIR = MAP_PLOT_DIR + "min/"
+    MAPS_PLOT_MAX_DIR = MAP_PLOT_DIR + "max/"
+    MAPS_PLOT_MEAN_DIR = MAP_PLOT_DIR + "mean/"
+    MAPS_PLOT_STD_DIR = MAP_PLOT_DIR + "std/"
+
     # all constances are in meters
     EQUATOR_LENGTH = int(40076000)  # this is start because we try to capture whole earth in one query
     ONE_DEGREE_LATITUDE = 111321

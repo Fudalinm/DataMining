@@ -237,8 +237,8 @@ def calculate_center_point(points_list):
     y = 0.0
     z = 0.0
     for p in points_list:
-        radian_latitude = p.latitude * math.pi / 180
-        radian_longitude = p.longitude * math.pi / 180
+        radian_latitude = p[0] * math.pi / 180
+        radian_longitude = p[1] * math.pi / 180
 
         x += math.cos(radian_latitude) * math.cos(radian_longitude)
         y += math.cos(radian_latitude) * math.sin(radian_longitude)
