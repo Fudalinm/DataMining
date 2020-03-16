@@ -20,7 +20,7 @@ def get_data_region(city_points):
     chunksize = 10 ** 6
     for chunk in pd.read_csv(globs.globals.DATA_BASE_FILTER_PATH_SORTED, chunksize=chunksize):
         last = chunk['Latitude'].iloc[-1]
-        latitude_mask = (~chunk['Latitude'].isna()) & (chunk['Latitude'].between(lat2, lat1))
+        latitude_mask = (~chunk['Latitude'].isna()) & (chunk['Latitude'].between(lat1, lat2))
         latitude_filtered_data = chunk[latitude_mask]
         # Check longitude
         if f_cross_180_longitude:
@@ -66,15 +66,24 @@ def calculate_crucial_data(square_with_data):
     return to_ret
 
 
-def proceed_region(city_points, resolution=5000, file_to_save=False):
-    # TODO: Create grid for region
+def proceed_region(city_points, resolution=5000, file_to_save=False, verbose=False):
+    if verbose:
+        print("Data grid creation")
     region_grid = grid.create_grid_for_surface_from_points(city_points[0], city_points[1], resolution=resolution)
-    # TODO: Load whole data for this region
+    if verbose:
+        print(region_grid)
+        print("Data for region")
     data_region = get_data_region(city_points)
-    # TODO: Assign data to appropriate square
+    if verbose:
+        print(data_region)
+        print("Assigning data for squares")
     squares_with_data = assign_data_to_square(region_grid, data_region)
-    # TODO: Calculate mean, standard deviation, mean, min, max
+    if verbose:
+        print(squares_with_data)
+        print("Calculating basic info")
     squares_basic_data = calculate_crucial_data(squares_with_data)
+    if verbose:
+        print(squares_basic_data)
     # TODO: Save data collected
     if file_to_save:
         if exists(file_to_save):
@@ -85,8 +94,24 @@ def proceed_region(city_points, resolution=5000, file_to_save=False):
     # TODO: Maybe some prediction based on the height in this model or some future years?
 
 
+def load_data_from_file(file, verbose=False):
+    if verbose:
+        print("Loading data")
+    krk = pickle.load(open(file, "rb"))
+    squares_basic_data, squares_with_data = krk
+    if verbose:
+        print(squares_basic_data)
+        print(squares_with_data)
+    return squares_basic_data, squares_with_data
+
+
 if __name__ == "__main__":
-    proceed_region(globs.cities.ROME, file_to_save=globs.cities.ROME_FILE)
-    proceed_region(globs.cities.TOKYO, file_to_save=globs.cities.TOKYO_FILE)
-    proceed_region(globs.cities.KRAKOW, file_to_save=globs.cities.KRAKOW_FILE)
-    proceed_region(globs.cities.CZARNOBYL, file_to_save=globs.cities.CZARNOBYL_FILE)
+    # proceed_region(globs.cities.ROME, file_to_save=globs.cities.ROME_FILE, verbose=True)
+    # proceed_region(globs.cities.TOKYO, file_to_save=globs.cities.TOKYO_FILE, verbose=True)
+    # proceed_region(globs.cities.KRAKOW, file_to_save=globs.cities.KRAKOW_FILE, verbose=True)
+    # proceed_region(globs.cities.CZARNOBYL, file_to_save=globs.cities.CZARNOBYL_FILE, verbose=True)
+
+    load_data_from_file(globs.cities.ROME_FILE, verbose=True)
+    load_data_from_file(globs.cities.TOKYO_FILE, verbose=True)
+    load_data_from_file(globs.cities.KRAKOW_FILE, verbose=True)
+    load_data_from_file(globs.cities.CZARNOBYL_FILE, verbose=True)
