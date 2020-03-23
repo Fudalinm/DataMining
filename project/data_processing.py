@@ -98,8 +98,7 @@ def proceed_region(city_points, resolution=5000, file_to_save=False, verbose=Fal
         if exists(file_to_save):
             remove(file_to_save)
         with open(file_to_save, "w+b") as fp:
-            # TODO: save approximated data not basic
-            pickle.dump([squares_basic_data, squares_with_data], fp)
+            pickle.dump([squares_basic_approximated, squares_with_data], fp)
 
 
 def approximate_square_without_data(square_basic_data):
@@ -220,10 +219,10 @@ def calculate_correlation_example():
 
 
 if __name__ == "__main__":
-    # proceed_region(globs.cities.ROME, file_to_save=globs.cities.ROME_FILE, verbose=True)
-    # proceed_region(globs.cities.TOKYO, file_to_save=globs.cities.TOKYO_FILE, verbose=True)
-    # proceed_region(globs.cities.KRAKOW, file_to_save=globs.cities.KRAKOW_FILE, verbose=True)
-    # proceed_region(globs.cities.CZARNOBYL, file_to_save=globs.cities.CZARNOBYL_FILE, verbose=True)
+    proceed_region(globs.cities.ROME, file_to_save=globs.cities.ROME_FILE, verbose=True)
+    proceed_region(globs.cities.TOKYO, file_to_save=globs.cities.TOKYO_FILE, verbose=True)
+    proceed_region(globs.cities.KRAKOW, file_to_save=globs.cities.KRAKOW_FILE, verbose=True)
+    proceed_region(globs.cities.CZARNOBYL, file_to_save=globs.cities.CZARNOBYL_FILE, verbose=True)
 
     # load_data_from_file(globs.cities.ROME_FILE, verbose=True)
     # load_data_from_file(globs.cities.TOKYO_FILE, verbose=True)
@@ -231,4 +230,4 @@ if __name__ == "__main__":
     # load_data_from_file(globs.cities.CZARNOBYL_FILE, verbose=True)
     #
 
-    calculate_correlation_example()
+    # calculate_correlation_example()
