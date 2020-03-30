@@ -6,6 +6,7 @@ from os.path import exists
 from math import isnan
 from os import remove
 import matplotlib
+import numpy as np
 import matplotlib.pyplot as plt
 from numpy import arange
 
@@ -15,13 +16,17 @@ def get_data_region(city_points):
     lat2 = city_points[1][0]
     lon1 = city_points[0][1]
     lon2 = city_points[1][1]
+    print(
+        "Loading csv file for lat: ({}) - ({}) lon: ({}) - ({}) ".format(city_points[0][0], city_points[1][0],
+                                                                         city_points[0][1],
+                                                                         city_points[1][1]))
     f_cross_180_longitude = False
     if lon2 < lon1:
         f_cross_180_longitude = True
 
     list_of_chunks = []
 
-    chunksize = 10 ** 6
+    chunksize = 3 * 10 ** 6
     for chunk in pd.read_csv(globs.globals.DATA_BASE_FILTER_PATH_SORTED, chunksize=chunksize):
         last = chunk['Latitude'].iloc[-1]
         latitude_mask = (~chunk['Latitude'].isna()) & (chunk['Latitude'].between(lat1, lat2))
@@ -49,11 +54,14 @@ def get_data_region(city_points):
 def assign_data_to_square(squares, data):
     to_ret = []
     for s in squares:
-        lat1 = s[0][0]
-        lat2 = s[3][0]
-        lon1 = s[0][1]
-        lon2 = s[3][1]
+        lat1, lat2 = min(s)[0], max(s)[0]
+        lon1, lon2 = min(s)[1], max(s)[1]
         square_mask = (data['Latitude'].between(lat1, lat2)) & (data['Longitude'].between(lon1, lon2))
+        if lat1 > lat2 or lon1 > lon2:
+            print("Something is wrong in assign to square")
+            print(s)
+        # TODO: consider using log2 on data
+        # data['Value'] = np.log(data.Value)
         to_ret.append((s, data[square_mask]))
     return to_ret
 
@@ -65,7 +73,6 @@ def calculate_crucial_data(square_with_data):
         std = d['Value'].std()
         min = d['Value'].min()
         max = d['Value'].max()
-
         to_ret.append((s, mean, std, min, max))
     return to_ret
 
@@ -102,11 +109,12 @@ def proceed_region(city_points, resolution=5000, file_to_save=None, verbose=Fals
 
 
 def approximate_square_without_data(square_basic_data):
+    # data = [(s, mean, std, min, max) ,....]
     # TODO: add real approximation of squares without any data
     def simple_map(square_with_data):
         s, mean, std, min, max = square_with_data
-        return s, 0 if isnan(mean) else mean, 0 if isnan(std) else std, 0 if isnan(min) else min, 0 if isnan(
-            max) else max,
+        return s, 0 if isnan(mean) or mean < 0 else mean, 0 if isnan(std) or std < 0 else std, 0 if isnan(
+            min) or min < 0 else min, 0 if isnan(max) or max < 0 else max
 
     square_basic_data = list(map(simple_map, square_basic_data))
     # square_basic_data = square_basic_data.map(simple_map)

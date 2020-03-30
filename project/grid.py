@@ -170,13 +170,13 @@ def create_save_grid():
 """
 TODO: it wont work if crossing the 180 degree lon
                             NORTH
-             (lat1,lon1) --------------- (lat1,lon2)
+             (lat2,lon1) --------------- (lat2,lon2)
              |                                  |
              |                                  |
     WEST     |                                  |     EAST
              |                                  |
              |                                  |
-             (lat2,lon1)----------------- (lat2,lon2)
+             (lat1,lon1)----------------- (lat1,lon2)
                             SOUTH
 """
 
