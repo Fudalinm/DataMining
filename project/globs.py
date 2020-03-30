@@ -17,12 +17,6 @@ class globals:
     DATA_FILTER_HEIGHT_PATH_SORTED = "./data/measurementsHeightFilteredSorted.csv"
     ELEMENTS_TO_SAVE_CSV = ['Latitude', 'Longitude', 'Value', 'Unit', 'Height', 'Captured Time']
 
-    MAP_PLOT_DIR = "./data/mapPlots/"
-    MAPS_PLOT_MIN_DIR = MAP_PLOT_DIR + "min/"
-    MAPS_PLOT_MAX_DIR = MAP_PLOT_DIR + "max/"
-    MAPS_PLOT_MEAN_DIR = MAP_PLOT_DIR + "mean/"
-    MAPS_PLOT_STD_DIR = MAP_PLOT_DIR + "std/"
-
     # all constances are in meters
     EQUATOR_LENGTH = int(40076000)  # this is start because we try to capture whole earth in one query
     ONE_DEGREE_LATITUDE = 111321
@@ -41,11 +35,21 @@ class globals:
 
 
 class cities:
+    PROCESSED_DATA_DIR = './data/processed/'
+    MAP_PLOT_DIR = './data/mapPlots/'
+
     ROME = [(41.75, 12.27), (42.05, 12.73)]
-    ROME_FILE = "./data/processed/Rome"
+    ROME_FILE = PROCESSED_DATA_DIR + "Rome"
+    ROME_MAP_DIR = MAP_PLOT_DIR + "Rome/"
+
     TOKYO = [(35.49, 139.45), (35.87, 139.95)]
-    TOKYO_FILE = "./data/processed/Tokyo"
+    TOKYO_FILE = PROCESSED_DATA_DIR + "Tokyo"
+    TOKYO_MAP_DIR = MAP_PLOT_DIR + "Tokyo/"
+
     KRAKOW = [(49.94, 19.7), (50.16, 20.35)]
-    KRAKOW_FILE = "./data/processed/Krakow"
+    KRAKOW_FILE = PROCESSED_DATA_DIR + "Krakow"
+    KRAKOW_MAP_DIR = MAP_PLOT_DIR + "Krakow/"
+
     CZARNOBYL = [(51.24, 30.1), (51.31, 30.34)]
-    CZARNOBYL_FILE = "./data/processed/Czarnobyl"
+    CZARNOBYL_FILE = PROCESSED_DATA_DIR + "Czarnobyl"
+    CZARNOBYL_MAP_DIR = MAP_PLOT_DIR + "Czarnobyl/"
