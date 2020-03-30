@@ -70,7 +70,7 @@ def calculate_crucial_data(square_with_data):
     return to_ret
 
 
-def proceed_region(city_points, resolution=5000, file_to_save=False, verbose=False):
+def proceed_region(city_points, resolution=5000, file_to_save=None, verbose=False):
     if verbose:
         print("Data grid creation")
     region_grid = grid.create_grid_for_surface_from_points(city_points[0], city_points[1], resolution=resolution)
@@ -94,7 +94,7 @@ def proceed_region(city_points, resolution=5000, file_to_save=False, verbose=Fal
         print(squares_basic_approximated)
         print("Saving")
 
-    if file_to_save:
+    if file_to_save is not None:
         if exists(file_to_save):
             remove(file_to_save)
         with open(file_to_save, "w+b") as fp:
@@ -114,22 +114,23 @@ def approximate_square_without_data(square_basic_data):
 
 
 def calculate_correlation_sea_level_radiation(location=None, verbose=False):
-    # location format = (lat_s,lat_e,lon_s,lon_e)
+    # location[(DOWN_LAT, LEFT_LON), (UP_LAT, RIGHT_LON)]
     if verbose:
         if location == None:
             print("Loading csv file for earth")
         else:
             print(
-                "Loading csv file for lat: ({}) - ({}) lon: ({}) - ({}) ".format(location[0], location[1], location[2],
-                                                                                 location[3]))
+                "Loading csv file for lat: ({}) - ({}) lon: ({}) - ({}) ".format(location[0][0], location[1][0],
+                                                                                 location[0][1],
+                                                                                 location[1][1]))
 
     df = pd.read_csv(globs.globals.DATA_FILTER_HEIGHT_PATH_SORTED, usecols=globs.globals.ELEMENTS_TO_SAVE_CSV)
 
     if location != None:
-        lat1 = location[0]
-        lat2 = location[1]
-        lon1 = location[2]
-        lon2 = location[3]
+        lat1 = location[0][0]
+        lat2 = location[1][0]
+        lon1 = location[0][1]
+        lon2 = location[1][1]
         latitude_mask = (~df['Latitude'].isna()) & (df['Latitude'].between(lat1, lat2))
         df = df[latitude_mask]
 
@@ -162,6 +163,37 @@ def calculate_correlation_sea_level_radiation(location=None, verbose=False):
     return pearson_corr, spearman_corr
 
 
+def calculate_and_save_covariance_matrix(region_points, path=None):
+    import seaborn as sns
+    df = get_data_region(region_points)
+
+    if path is not None:
+        import os
+        if not os.path.exists(path):
+            os.mkdir(path)
+
+        plt.clf()
+
+        colormap = plt.cm.viridis
+        plt.figure(figsize=(12, 12))
+        plt.title('Pearson Correlation of Features', y=1.05, size=15)
+        sns.heatmap(df.corr(method='pearson'), linewidths=0.1, vmax=1.0,
+                    square=True, cmap=colormap, linecolor='white', annot=True)
+        plt.savefig(path + 'pearson.png')
+
+        plt.clf()
+
+        colormap = plt.cm.viridis
+        plt.figure(figsize=(12, 12))
+        plt.title('Spearman Correlation of Features', y=1.05, size=15)
+        sns.heatmap(df.corr(method='spearman'), linewidths=0.1, vmax=1.0,
+                    square=True, cmap=colormap, linecolor='white', annot=True)
+        plt.savefig(path + 'spearman.png')
+
+        plt.clf()
+    pass
+
+
 def load_data_from_file(file, verbose=False):
     if verbose:
         print("Loading data")
@@ -174,21 +206,25 @@ def load_data_from_file(file, verbose=False):
 
 
 def calculate_correlation_example():
+    # location[(DOWN_LAT, LEFT_LON), (UP_LAT, RIGHT_LON)]
     # calculating correlation height and radiation for regions and plot results
     correlation_list = []
     print("Correlation for Europe")
-    pearson, spearman = calculate_correlation_sea_level_radiation(location=[37, 58, -8, 32], verbose=True)
+    pearson, spearman = calculate_correlation_sea_level_radiation(location=globs.regions.EUROPE, verbose=True)
     correlation_list.append(['Europe', pearson['Value']['Height'], spearman['Value']['Height']])
+
     print("Correlation for Czech")
-    pearson, spearman = calculate_correlation_sea_level_radiation(location=[48.7, 50.9, 12.1, 18.7], verbose=True)
+    pearson, spearman = calculate_correlation_sea_level_radiation(location=globs.regions.CZECH, verbose=True)
     correlation_list.append(['Czech', pearson['Value']['Height'], spearman['Value']['Height']])
+
     print("Correlation for USA")
-    pearson, spearman = calculate_correlation_sea_level_radiation(location=[26.7, 49, -125.3, -65.5], verbose=True)
+    pearson, spearman = calculate_correlation_sea_level_radiation(location=globs.regions.USA, verbose=True)
     correlation_list.append(['USA', pearson['Value']['Height'], spearman['Value']['Height']])
 
     print("Correlation for Japan")
-    pearson, spearman = calculate_correlation_sea_level_radiation(location=[29, 46, 129, 146], verbose=True)
+    pearson, spearman = calculate_correlation_sea_level_radiation(location=globs.regions.JAPAN, verbose=True)
     correlation_list.append(['Japan', pearson['Value']['Height'], spearman['Value']['Height']])
+
     print("Correlation for Earth")
     pearson, spearman = calculate_correlation_sea_level_radiation(verbose=True)
     correlation_list.append(['Earth', pearson['Value']['Height'], spearman['Value']['Height']])
@@ -219,10 +255,10 @@ def calculate_correlation_example():
 
 
 if __name__ == "__main__":
-    proceed_region(globs.cities.ROME, file_to_save=globs.cities.ROME_FILE, verbose=True)
-    proceed_region(globs.cities.TOKYO, file_to_save=globs.cities.TOKYO_FILE, verbose=True)
-    proceed_region(globs.cities.KRAKOW, file_to_save=globs.cities.KRAKOW_FILE, verbose=True)
-    proceed_region(globs.cities.CZARNOBYL, file_to_save=globs.cities.CZARNOBYL_FILE, verbose=True)
+    # proceed_region(globs.cities.ROME, file_to_save=globs.cities.ROME_FILE, verbose=True)
+    # proceed_region(globs.cities.TOKYO, file_to_save=globs.cities.TOKYO_FILE, verbose=True)
+    # proceed_region(globs.cities.KRAKOW, file_to_save=globs.cities.KRAKOW_FILE, verbose=True)
+    # proceed_region(globs.cities.CZARNOBYL, file_to_save=globs.cities.CZARNOBYL_FILE, verbose=True)
 
     # load_data_from_file(globs.cities.ROME_FILE, verbose=True)
     # load_data_from_file(globs.cities.TOKYO_FILE, verbose=True)
@@ -230,4 +266,4 @@ if __name__ == "__main__":
     # load_data_from_file(globs.cities.CZARNOBYL_FILE, verbose=True)
     #
 
-    # calculate_correlation_example()
+    calculate_correlation_example()

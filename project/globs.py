@@ -34,9 +34,10 @@ class globals:
     FRONT_QUERY_API = "https://api.safecast.org/measurements.json?"
 
 
+# location[(DOWN_LAT, LEFT_LON), (UP_LAT, RIGHT_LON)]
 class cities:
     PROCESSED_DATA_DIR = './data/processed/'
-    MAP_PLOT_DIR = './data/mapPlots/'
+    MAP_PLOT_DIR = './data/plots/'
 
     ROME = [(41.75, 12.27), (42.05, 12.73)]
     ROME_FILE = PROCESSED_DATA_DIR + "Rome"
@@ -53,3 +54,24 @@ class cities:
     CZARNOBYL = [(51.24, 30.1), (51.31, 30.34)]
     CZARNOBYL_FILE = PROCESSED_DATA_DIR + "Czarnobyl"
     CZARNOBYL_MAP_DIR = MAP_PLOT_DIR + "Czarnobyl/"
+
+
+class regions:
+    PROCESSED_DATA_DIR = './data/processed/'
+    MAP_PLOT_DIR = './data/plots/'
+
+    EUROPE = [(37, -8), (58, 32)]
+    EUROPE_FILE = PROCESSED_DATA_DIR + 'Europe'
+    EUROPE_MAP_DIR = MAP_PLOT_DIR + 'Europe/'
+
+    USA = [(26, -126), (49, -65)]
+    USA_FILE = PROCESSED_DATA_DIR + 'USA'
+    USA_MAP_DIR = MAP_PLOT_DIR + 'USA/'
+
+    CZECH = [(48.5, 12), (51, 19)]
+    CZECH_FILE = PROCESSED_DATA_DIR + 'Czech'
+    CZECH_MAP_DIR = MAP_PLOT_DIR + 'Czech/'
+
+    JAPAN = [(30, 128), (46, 147)]
+    JAPAN_FILE = PROCESSED_DATA_DIR + 'Japan'
+    JAPAN_MAP_DIR = MAP_PLOT_DIR + 'Japan/'
