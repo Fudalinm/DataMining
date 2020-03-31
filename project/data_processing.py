@@ -60,8 +60,6 @@ def assign_data_to_square(squares, data):
         if lat1 > lat2 or lon1 > lon2:
             print("Something is wrong in assign to square")
             print(s)
-        # TODO: consider using log2 on data
-        # data['Value'] = np.log(data.Value)
         to_ret.append((s, data[square_mask]))
     return to_ret
 
@@ -111,13 +109,41 @@ def proceed_region(city_points, resolution=5000, file_to_save=None, verbose=Fals
 def approximate_square_without_data(square_basic_data):
     # data = [(s, mean, std, min, max) ,....]
     # TODO: add real approximation of squares without any data
+    errors = 0
+    without_data = 0
+    with_data = 0
+    total = len(square_basic_data)
+
+    for s, mean, std, min, max in square_basic_data:
+        if isnan(mean) or isnan(std) or isnan(min) or isnan(max):
+            without_data += 1
+        elif mean < 0 or std < 0 or min < 0 or max < 0:
+            errors += 1
+        else:
+            with_data += 1
+    print("Analyzing data: total_squares: {} without_data: {}, with_data: {}, errors: {}".format(total, without_data,
+                                                                                                 with_data, errors))
+    # THIS IS FOR REMOVING SQUARES WITHOUT DATA, REMOVE WHEN THEY WILL BE INTERPOLATED
+    square_basic_data = list(filter(lambda x: not isnan(x[1]), square_basic_data))
+
     def simple_map(square_with_data):
         s, mean, std, min, max = square_with_data
-        return s, 0 if isnan(mean) or mean < 0 else mean, 0 if isnan(std) or std < 0 else std, 0 if isnan(
-            min) or min < 0 else min, 0 if isnan(max) or max < 0 else max
+        mean2 = 0 if isnan(mean) or mean < 0 else mean
+        std2 = 0 if isnan(std) or std < 0 else std
+        min2 = 0 if isnan(min) or min < 0 else min
+        max2 = 0 if isnan(max) or max < 0 else max
+        return s, mean2, std2, min2, max2
 
     square_basic_data = list(map(simple_map, square_basic_data))
-    # square_basic_data = square_basic_data.map(simple_map)
+
+    # TODO: consider using log2 on data
+    # just unncoment this fragment if you want to use it :)
+    # def log2_map(square_with_data):
+    #     s, mean, std, min, max = square_with_data
+    #     from math import log2
+    #     return s, log2(mean + 1), log2(std + 1), log2(min + 1), log2(max + 1)
+    # square_basic_data = list(map(log2_map, square_basic_data))
+
     return square_basic_data
 
 
