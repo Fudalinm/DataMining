@@ -32,7 +32,7 @@ def filter_height(path_to_load, path_to_save, columns_to_save):
         only_height_csv.to_csv(path_to_save, mode='a', header=iter_num == 1, index=False)
 
 
-def find_flights_data(path_to_load, path_to_save,h=350, columns_to_save=globs.globals.ELEMENTS_TO_SAVE_CSV):
+def find_flights_data(path_to_load, path_to_save, h=350, columns_to_save=globs.globals.ELEMENTS_TO_SAVE_CSV):
     df_iter = pd.read_csv(path_to_load, chunksize=1000000, iterator=True, usecols=columns_to_save)
 
     if os.path.exists(path_to_save):
@@ -64,16 +64,22 @@ def sort_data(path_to_file, columns):
     df.to_csv(path_to_file + 'sorted_' + str(columns), header=True, index=False)
 
 
-def data_distribution(path_to_file, col, path, bins=100):
+def data_distribution(path_to_file, bins=300):
     import matplotlib.pyplot as plt
     print("Reading")
-    df = pd.read_csv(path_to_file, names=col, low_memory=True)
+    df = pd.read_csv(path_to_file, low_memory=True, dtype={3: 'Float64', 5: 'Float64'})
     print("Making plot")
     fig, ax = plt.subplots()
-    df.hist(bin=bins, column=col)
-    fig.savefig(path)
+    df.hist(column='Value', bins=bins, ax=ax)
+    fig.savefig(globs.plots.VALUE_DISTRIBUTION_PATH)
     plt.clf()
-    plt.cla()
+    # plt.cla()
+
+    fig, ax = plt.subplots()
+    df.hist(column='Height', bins=bins, ax=ax)
+    fig.savefig(globs.plots.HEIGHT_DISTRIBUTION_PATH)
+    plt.clf()
+    # plt.cla()
 
 
 if __name__ == "__main__":

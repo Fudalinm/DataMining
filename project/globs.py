@@ -37,15 +37,9 @@ class globals:
 
 class plots:
     GENERAL_PLOTS_PATH = './data/plots/_general/'
-
-    VALUE_DISTRIBUTION_PATH = GENERAL_PLOTS_PATH + 'valueDistribution.png'
-    VALUE_DISTRIBUTION_COLUMNS = ['Value']
-
-    HEIGHT_DISTRIBUTION_PATH = GENERAL_PLOTS_PATH + 'heightDistribution.png'
-    HEIGHT_DISTRIBUTION_COLUMNS = ['Height']
-
-    DATE_DISTRIBUTION_PATH = GENERAL_PLOTS_PATH + 'dateDistribution.png'
-    DATE_DISTRIBUTION_COLUMNS = ['Captured Time']
+    DISTRIBUTION_PATH = GENERAL_PLOTS_PATH + 'distribution'
+    VALUE_DISTRIBUTION_PATH = DISTRIBUTION_PATH + 'Value.png'
+    HEIGHT_DISTRIBUTION_PATH = DISTRIBUTION_PATH + 'Height.png'
 
 
 # location[(DOWN_LAT, LEFT_LON), (UP_LAT, RIGHT_LON)]
