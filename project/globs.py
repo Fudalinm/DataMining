@@ -15,6 +15,8 @@ class globals:
     DATA_BASE_FILTER_PATH_SORTED = "./data/measurementsFilteredSorted.csv"
     DATA_FILTER_HEIGHT_PATH = "./data/measurementsHeightFiltered.csv"
     DATA_FILTER_HEIGHT_PATH_SORTED = "./data/measurementsHeightFilteredSorted.csv"
+    DATA_FLIGHTS = './data/flights.csv'
+    MEASUREMENTS_IN_MONTH = './data/measurementsInMonth.csv'
     ELEMENTS_TO_SAVE_CSV = ['Latitude', 'Longitude', 'Value', 'Unit', 'Height', 'Captured Time']
 
     # all constances are in meters
@@ -32,6 +34,18 @@ class globals:
     ELEMENTS_TO_SAVE_API = ['id', 'user_id', 'value', 'unit', 'height', 'latitude', 'longitude', 'captured_at',
                             'measurement_import_id']
     FRONT_QUERY_API = "https://api.safecast.org/measurements.json?"
+
+class plots:
+    GENERAL_PLOTS_PATH = './data/plots/_general/'
+
+    VALUE_DISTRIBUTION_PATH = GENERAL_PLOTS_PATH + 'valueDistribution.png'
+    VALUE_DISTRIBUTION_COLUMNS = ['Value']
+
+    HEIGHT_DISTRIBUTION_PATH = GENERAL_PLOTS_PATH + 'heightDistribution.png'
+    HEIGHT_DISTRIBUTION_COLUMNS = ['Height']
+
+    DATE_DISTRIBUTION_PATH = GENERAL_PLOTS_PATH + 'dateDistribution.png'
+    DATE_DISTRIBUTION_COLUMNS = ['Captured Time']
 
 
 # location[(DOWN_LAT, LEFT_LON), (UP_LAT, RIGHT_LON)]
@@ -75,3 +89,4 @@ class regions:
     JAPAN = [(30, 128), (46, 147)]
     JAPAN_FILE = PROCESSED_DATA_DIR + 'Japan'
     JAPAN_MAP_DIR = MAP_PLOT_DIR + 'Japan/'
+
