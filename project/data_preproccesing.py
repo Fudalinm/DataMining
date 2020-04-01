@@ -1,10 +1,12 @@
 import pandas as pd
 import os
 import globs
+import numpy as np
 
 
 def filter_whole_data(path_to_load, path_to_save, columns_to_save):
-    df_iter = pd.read_csv(path_to_load, chunksize=500000, iterator=True, usecols=columns_to_save)
+    import datetime
+    df_iter = pd.read_csv(path_to_load, chunksize=10 ** 6, iterator=True, usecols=columns_to_save)
     # f = open(path_to_save, "w+")
     # TODO: write header to csv
 
@@ -14,6 +16,9 @@ def filter_whole_data(path_to_load, path_to_save, columns_to_save):
     for iter_num, chunk in enumerate(df_iter, 1):
         cpm_mask = chunk['Unit'] == "cpm"
         only_cpm_csv = chunk[cpm_mask]
+        only_cpm_csv['Captured Time'] = pd.to_datetime(only_cpm_csv['Captured Time'], errors='coerce')
+        only_cpm_csv = only_cpm_csv[(only_cpm_csv['Captured Time'] < np.datetime64(datetime.date(2020, 5, 5)))]
+
         # print(only_cpm_csv)
         only_cpm_csv.to_csv(path_to_save, mode='a', header=iter_num == 1, index=False)
 
@@ -69,15 +74,42 @@ def data_distribution(path_to_file, bins=300):
     print("Reading")
     df = pd.read_csv(path_to_file, low_memory=True, dtype={3: 'Float64', 5: 'Float64'})
     print("Making plot")
-    fig, ax = plt.subplots()
-    df.hist(column='Value', bins=bins, ax=ax)
-    fig.savefig(globs.plots.VALUE_DISTRIBUTION_PATH)
+
+    bins = []
+    m = df['Value'].min()
+    if m < 0:
+        bins.append(m)
+
+    bins += [x for x in range(0, 50, 5)]
+    bins += [x for x in range(50, 200, 20)]
+    bins += [x for x in range(200, 1000, 100)]
+    bins += [x for x in range(1000, 4001, 1000)]
+
+    m = df['Value'].max()
+    if m > bins[len(bins) - 1]:
+        bins.append(m)
+
+    vals = []
+
+    for i in range(1, len(bins)):
+        vals.append(df[df['Value'].between(bins[i - 1], bins[i])]['Value'].count())
+
+    if os.path.exists(globs.plots.VALUE_DISTRIBUTION_PATH + 'lists'):
+        os.remove(globs.plots.VALUE_DISTRIBUTION_PATH + 'lists')
+
+    with open(globs.plots.VALUE_DISTRIBUTION_PATH + 'lists', 'w+') as filehandle:
+        filehandle.write('Data distribution\nVals')
+        filehandle.write('%s\n', str(vals))
+        filehandle.write('Bins')
+        filehandle.write('%s\n', str(bins))
+
+    plt.fill_between(bins, np.concatenate(([0], vals)), step="pre")
+    plt.savefig(globs.plots.VALUE_DISTRIBUTION_PATH, dpi=600)
     plt.clf()
-    # plt.cla()
 
     fig, ax = plt.subplots()
     df.hist(column='Height', bins=bins, ax=ax)
-    fig.savefig(globs.plots.HEIGHT_DISTRIBUTION_PATH)
+    fig.savefig(globs.plots.HEIGHT_DISTRIBUTION_PATH, dpi=600)
     plt.clf()
     # plt.cla()
 

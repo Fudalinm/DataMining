@@ -181,6 +181,12 @@ TODO: it wont work if crossing the 180 degree lon
 """
 
 
+def create_grid_for_square(s, res):
+    lat1, lat2 = min(s)[0], max(s)[0]
+    lon1, lon2 = min(s)[1], max(s)[1]
+    return create_grid_for_surface(lat1, lon1, lat2, lon2, resolution=res)
+
+
 def create_grid_for_surface(lat1, lon1, lat2, lon2, resolution=5000.0):
     grid = []
 
@@ -214,7 +220,7 @@ def create_grid_for_surface(lat1, lon1, lat2, lon2, resolution=5000.0):
         longitude_points.sort()
 
         squares = []
-        for k in range(len(longitude_points)):
+        for k in range(len(longitude_points)-1):
             squares.append([(latitude_degree_north, longitude_points[k]),  # A
                             (latitude_degree_north, longitude_points[(k + 1) % len(longitude_points)]),  # B
                             (latitude_degree_south, longitude_points[k]),  # C

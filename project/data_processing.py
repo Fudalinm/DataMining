@@ -239,6 +239,67 @@ def load_data_from_file(file, verbose=False):
     return squares_basic_data, squares_with_data
 
 
+def find_most_interesting_locations(board, start_resolution=100000, final_resolution=8000):
+    # ROME = [(LatD, LonL), (LatT, LonR)]
+    # lat_s = board[0][0]
+    # lat_e = board[1][0]
+    # lon_s = board[0][1]
+    # lon_e = board[1][1]
+    current_resolution = start_resolution
+    resolution_sequence = []
+
+    while current_resolution >= final_resolution:
+        resolution_sequence.append(current_resolution)
+        current_resolution = current_resolution / 2
+
+    if current_resolution != final_resolution:
+        resolution_sequence.append(final_resolution)
+    print(resolution_sequence)
+
+    data = get_data_region(board)
+    current_squares = grid.create_grid_for_surface_from_points(board[0], board[1], resolution=resolution_sequence[0])
+    count_data_in_squares(current_squares, data)
+
+
+    for current_resolution in resolution_sequence[1:]:
+        # for top20 current squares proceed
+        tmp_squares = []
+        for i in range(20):
+            tmp_squares.append(grid.create_grid_for_square(current_squares[i], current_resolution))
+        current_squares = tmp_squares
+        count_data_in_squares(current_squares, data)
+    return current_squares[:20]
+
+
+def find_most_interesting_locations2(board,  resolution=10000):
+
+    data = get_data_region(board)
+    squares = grid.create_grid_for_surface_from_points(board[0], board[1], resolution=resolution)
+
+    return count_data_in_squares(squares, data)[:50]
+
+
+def count_data_in_squares(squares, data):
+    to_ret = []
+    for s in squares:
+        lat1, lat2 = min(s)[0], max(s)[0]
+        lon1, lon2 = min(s)[1], max(s)[1]
+        square_mask = (data['Latitude'].between(lat1, lat2)) & (data['Longitude'].between(lon1, lon2))
+        count = square_mask.sum()
+        to_ret.append((s, count))
+        if lat1 > lat2 or lon1 > lon2:
+            print("Something is wrong in assign to square")
+            print(s)
+        # to_ret.append((s, data[square_mask]))
+    # sort list from most to lowest
+    # print("####")
+    # print(to_ret[:20])
+    to_ret.sort(key=lambda x: x[1], reverse=True)
+    # print(to_ret[:20])
+    # print("####")
+    return to_ret
+
+
 def calculate_correlation_example():
     # location[(DOWN_LAT, LEFT_LON), (UP_LAT, RIGHT_LON)]
     # calculating correlation height and radiation for regions and plot results
