@@ -37,7 +37,7 @@ def filter_height(path_to_load, path_to_save, columns_to_save):
         only_height_csv.to_csv(path_to_save, mode='a', header=iter_num == 1, index=False)
 
 
-def find_flights_data(path_to_load, path_to_save, h=350, columns_to_save=globs.globals.ELEMENTS_TO_SAVE_CSV):
+def find_flights_data(path_to_load, path_to_save, h=350, columns_to_save=globs.general.ELEMENTS_TO_SAVE_CSV):
     df_iter = pd.read_csv(path_to_load, chunksize=1000000, iterator=True, usecols=columns_to_save)
 
     if os.path.exists(path_to_save):
@@ -62,14 +62,14 @@ def count_measurements_in_month(path_to_load, path_to_save):
     df_iter.to_csv(path_to_save, mode='a', index=True)
 
 
-def sort_data(path_to_file, columns):
+def sort_data(path_to_file, path_to_save, columns):
     df = pd.read_csv(path_to_file)
     df.sort_values(axis=0, ascending=True, by=columns, inplace=True)
     os.remove(path_to_file)
-    df.to_csv(path_to_file + 'sorted_' + str(columns), header=True, index=False)
+    df.to_csv(path_to_save, header=True, index=False)
 
 
-def data_distribution(path_to_file, bins=300):
+def data_distribution(path_to_file,path_value_buckets,path_value_plot,path_height_plot):
     import matplotlib.pyplot as plt
     print("Reading")
     df = pd.read_csv(path_to_file, low_memory=True, dtype={3: 'Float64', 5: 'Float64'})
@@ -94,22 +94,22 @@ def data_distribution(path_to_file, bins=300):
     for i in range(1, len(bins)):
         vals.append(df[df['Value'].between(bins[i - 1], bins[i])]['Value'].count())
 
-    if os.path.exists(globs.plots.VALUE_DISTRIBUTION_PATH + 'lists'):
-        os.remove(globs.plots.VALUE_DISTRIBUTION_PATH + 'lists')
+    if os.path.exists(path_value_buckets):
+        os.remove(path_value_buckets)
 
-    with open(globs.plots.VALUE_DISTRIBUTION_PATH + 'lists', 'w+') as filehandle:
+    with open(path_value_buckets, 'w+') as filehandle:
         filehandle.write('Data distribution\nVals')
-        filehandle.write('%s\n', str(vals))
+        filehandle.write('%s\n'.format(str(vals)))
         filehandle.write('Bins')
-        filehandle.write('%s\n', str(bins))
+        filehandle.write('%s\n'.format(str(bins)))
 
     plt.fill_between(bins, np.concatenate(([0], vals)), step="pre")
-    plt.savefig(globs.plots.VALUE_DISTRIBUTION_PATH, dpi=600)
+    plt.savefig(path_value_plot, dpi=600)
     plt.clf()
 
     fig, ax = plt.subplots()
     df.hist(column='Height', bins=bins, ax=ax)
-    fig.savefig(globs.plots.HEIGHT_DISTRIBUTION_PATH, dpi=600)
+    fig.savefig(path_height_plot, dpi=600)
     plt.clf()
     # plt.cla()
 

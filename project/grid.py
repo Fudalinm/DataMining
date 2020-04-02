@@ -51,7 +51,7 @@ class Point:
             math.cos(self.latitude * math.pi / 180) * math.sin(dlon / 2) ** 2
         c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 
-        int_distance = int(globs.globals.EARTH_RADIUS * c) + 1
+        int_distance = int(globs.general.EARTH_RADIUS * c) + 1
         return int_distance
 
     def __str__(self):
@@ -62,11 +62,11 @@ def create_earth_grid(start, end):
     bm = Basemap(resolution='c')
     grid = []
     for i in range(start, end, 5000):
-        latitude_degree_north = (-(i / globs.globals.MERIDIAN_LENGTH) * 180 + 90) * (math.pi / 180)
-        latitude_degree_south = (-((i + 5000) / globs.globals.MERIDIAN_LENGTH) * 180 + 90) * (math.pi / 180)
+        latitude_degree_north = (-(i / globs.general.MERIDIAN_LENGTH) * 180 + 90) * (math.pi / 180)
+        latitude_degree_south = (-((i + 5000) / globs.general.MERIDIAN_LENGTH) * 180 + 90) * (math.pi / 180)
 
-        longitude_degree_length_north = (math.cos(latitude_degree_north) * globs.globals.EQUATOR_LENGTH) / 360
-        longitude_degree_length_south = (math.cos(latitude_degree_south) * globs.globals.EQUATOR_LENGTH) / 360
+        longitude_degree_length_north = (math.cos(latitude_degree_north) * globs.general.EQUATOR_LENGTH) / 360
+        longitude_degree_length_south = (math.cos(latitude_degree_south) * globs.general.EQUATOR_LENGTH) / 360
 
         if longitude_degree_length_north > longitude_degree_length_south:
             longer_longitude_degree = longitude_degree_length_north
@@ -106,12 +106,12 @@ def create_earth_grid(start, end):
 
 
 def create_earth_grid_basic():
-    return create_earth_grid(0, globs.globals.MERIDIAN_LENGTH)
+    return create_earth_grid(0, globs.general.MERIDIAN_LENGTH)
 
 
 def create_earth_grid_split():
     steps = 8
-    step = int(globs.globals.MERIDIAN_LENGTH / steps)
+    step = int(globs.general.MERIDIAN_LENGTH / steps)
     with concurrent.futures.ProcessPoolExecutor() as executor:
         results = []
         to_ret = []
@@ -130,12 +130,12 @@ def save_grid(grid):
         for i in range(len(square)):
             arr_to_save[square_index, i, 0] = square[i].longitude
             arr_to_save[square_index, i, 1] = square[i].latitude
-    np.save(globs.globals.GRID_FILE_TO_SAVE_API, arr_to_save)
+    np.save(globs.general.GRID_FILE_TO_SAVE_API, arr_to_save)
 
 
 def load_grid(percent_to_download):
     print(globs.bcolors.HEADER + "Loading data" + globs.bcolors.ENDC)
-    arr = np.load(globs.globals.GRID_FILE_TO_SAVE_API)
+    arr = np.load(globs.general.GRID_FILE_TO_SAVE_API)
     grid = []
 
     x, y, z = arr.shape
@@ -195,12 +195,12 @@ def create_grid_for_surface(lat1, lon1, lat2, lon2, resolution=5000.0):
         grid.extend(create_grid_for_surface(lat1, 0, lat2, lon2))
         return grid
 
-    degree_step = resolution / globs.globals.ONE_DEGREE_LATITUDE
+    degree_step = resolution / globs.general.ONE_DEGREE_LATITUDE
     for latitude_degree_north in np.arange(lat1, lat2 + degree_step, degree_step):
         latitude_degree_south = latitude_degree_north + degree_step
 
-        longitude_degree_length_north = (math.cos(latitude_degree_north) * globs.globals.EQUATOR_LENGTH) / 360
-        longitude_degree_length_south = (math.cos(latitude_degree_south) * globs.globals.EQUATOR_LENGTH) / 360
+        longitude_degree_length_north = (math.cos(latitude_degree_north) * globs.general.EQUATOR_LENGTH) / 360
+        longitude_degree_length_south = (math.cos(latitude_degree_south) * globs.general.EQUATOR_LENGTH) / 360
 
         if longitude_degree_length_north > longitude_degree_length_south:
             longer_longitude_degree = longitude_degree_length_north
@@ -272,7 +272,7 @@ def calculate_distance(p1, p2):
         math.cos(p1[0] * math.pi / 180) * math.sin(dlon / 2) ** 2
     c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 
-    return int(globs.globals.EARTH_RADIUS * c) + 1
+    return int(globs.general.EARTH_RADIUS * c) + 1
 
 
 if __name__ == "__main__":

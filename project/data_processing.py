@@ -7,6 +7,7 @@ from math import isnan
 from os import remove
 import matplotlib
 import numpy as np
+import os
 import matplotlib.pyplot as plt
 from numpy import arange
 
@@ -27,7 +28,7 @@ def get_data_region(city_points):
     list_of_chunks = []
 
     chunksize = 3 * 10 ** 6
-    for chunk in pd.read_csv(globs.globals.DATA_BASE_FILTER_PATH_SORTED, chunksize=chunksize):
+    for chunk in pd.read_csv(globs.general.DATA_BASE_FILTER_PATH_SORTED, chunksize=chunksize):
         last = chunk['Latitude'].iloc[-1]
         latitude_mask = (~chunk['Latitude'].isna()) & (chunk['Latitude'].between(lat1, lat2))
         latitude_filtered_data = chunk[latitude_mask]
@@ -75,7 +76,7 @@ def calculate_crucial_data(square_with_data):
     return to_ret
 
 
-def proceed_region(city_points, resolution=5000, file_to_save=None, verbose=False):
+def proceed_region(city_points, resolution=5000, file_to_save=None, verbose=False, f_log=False):
     if verbose:
         print("Data grid creation")
     region_grid = grid.create_grid_for_surface_from_points(city_points[0], city_points[1], resolution=resolution)
@@ -94,7 +95,7 @@ def proceed_region(city_points, resolution=5000, file_to_save=None, verbose=Fals
     if verbose:
         print(squares_basic_data)
         print("Approximating squares without any data")
-    squares_basic_approximated = approximate_square_without_data(squares_basic_data)
+    squares_basic_approximated = approximate_square_without_data(squares_basic_data, f_log)
     if verbose:
         print(squares_basic_approximated)
         print("Saving")
@@ -106,7 +107,7 @@ def proceed_region(city_points, resolution=5000, file_to_save=None, verbose=Fals
             pickle.dump([squares_basic_approximated, squares_with_data], fp)
 
 
-def approximate_square_without_data(square_basic_data):
+def approximate_square_without_data(square_basic_data, f_log=False):
     # data = [(s, mean, std, min, max) ,....]
     # TODO: add real approximation of squares without any data
     errors = 0
@@ -138,11 +139,13 @@ def approximate_square_without_data(square_basic_data):
 
     # TODO: consider using log2 on data
     # just unncoment this fragment if you want to use it :)
-    # def log2_map(square_with_data):
-    #     s, mean, std, min, max = square_with_data
-    #     from math import log2
-    #     return s, log2(mean + 1), log2(std + 1), log2(min + 1), log2(max + 1)
-    # square_basic_data = list(map(log2_map, square_basic_data))
+    if f_log:
+        def log2_map(square_with_data):
+            s, mean, std, min, max = square_with_data
+            from math import log2
+            return s, log2(mean + 1), log2(std + 1), log2(min + 1), log2(max + 1)
+
+        square_basic_data = list(map(log2_map, square_basic_data))
 
     return square_basic_data
 
@@ -158,7 +161,7 @@ def calculate_correlation_sea_level_radiation(location=None, verbose=False):
                                                                                  location[0][1],
                                                                                  location[1][1]))
 
-    df = pd.read_csv(globs.globals.DATA_FILTER_HEIGHT_PATH_SORTED, usecols=globs.globals.ELEMENTS_TO_SAVE_CSV)
+    df = pd.read_csv(globs.general.DATA_FILTER_HEIGHT_PATH_SORTED, usecols=globs.general.ELEMENTS_TO_SAVE_CSV)
 
     if location != None:
         lat1 = location[0][0]
@@ -239,44 +242,27 @@ def load_data_from_file(file, verbose=False):
     return squares_basic_data, squares_with_data
 
 
-def find_most_interesting_locations(board, start_resolution=100000, final_resolution=8000):
-    # ROME = [(LatD, LonL), (LatT, LonR)]
-    # lat_s = board[0][0]
-    # lat_e = board[1][0]
-    # lon_s = board[0][1]
-    # lon_e = board[1][1]
-    current_resolution = start_resolution
-    resolution_sequence = []
-
-    while current_resolution >= final_resolution:
-        resolution_sequence.append(current_resolution)
-        current_resolution = current_resolution / 2
-
-    if current_resolution != final_resolution:
-        resolution_sequence.append(final_resolution)
-    print(resolution_sequence)
-
-    data = get_data_region(board)
-    current_squares = grid.create_grid_for_surface_from_points(board[0], board[1], resolution=resolution_sequence[0])
-    count_data_in_squares(current_squares, data)
-
-
-    for current_resolution in resolution_sequence[1:]:
-        # for top20 current squares proceed
-        tmp_squares = []
-        for i in range(20):
-            tmp_squares.append(grid.create_grid_for_square(current_squares[i], current_resolution))
-        current_squares = tmp_squares
-        count_data_in_squares(current_squares, data)
-    return current_squares[:20]
-
-
-def find_most_interesting_locations2(board,  resolution=10000):
-
+def find_most_popular_locations(board, resolution=10000, path_to_save=None):
     data = get_data_region(board)
     squares = grid.create_grid_for_surface_from_points(board[0], board[1], resolution=resolution)
 
-    return count_data_in_squares(squares, data)[:50]
+    most_interesting_squares_with_count = count_data_in_squares(squares, data)
+
+    how_many = 50
+    if how_many > len(most_interesting_squares_with_count):
+        how_many = len(most_interesting_squares_with_count) - 1
+
+    most_interesting_squares_with_count = most_interesting_squares_with_count[:how_many]
+
+    if path_to_save is not None:
+        most_interesting_squares = [i[0] for i in most_interesting_squares_with_count]
+        squares_with_data = assign_data_to_square(most_interesting_squares, data)
+        if os.path.exists(path_to_save):
+            os.remove(path_to_save)
+        with open(path_to_save, "w+b") as fp:
+            pickle.dump([most_interesting_squares_with_count, squares_with_data], fp)
+
+    return most_interesting_squares_with_count
 
 
 def count_data_in_squares(squares, data):
@@ -286,17 +272,13 @@ def count_data_in_squares(squares, data):
         lon1, lon2 = min(s)[1], max(s)[1]
         square_mask = (data['Latitude'].between(lat1, lat2)) & (data['Longitude'].between(lon1, lon2))
         count = square_mask.sum()
-        to_ret.append((s, count))
+        if count != 0:
+            to_ret.append((s, count))
         if lat1 > lat2 or lon1 > lon2:
             print("Something is wrong in assign to square")
             print(s)
-        # to_ret.append((s, data[square_mask]))
     # sort list from most to lowest
-    # print("####")
-    # print(to_ret[:20])
     to_ret.sort(key=lambda x: x[1], reverse=True)
-    # print(to_ret[:20])
-    # print("####")
     return to_ret
 
 
