@@ -264,11 +264,10 @@ def load_data_from_file(file, verbose=False):
     return squares_basic_data, squares_with_data
 
 
-def find_most_popular_locations(board, resolution=10000, path_to_save=None):
-    data = get_data_region(board)
-    squares = grid.create_grid_for_surface_from_points(board[0], board[1], resolution=resolution)
+def find_most_popular_locations(path_to_load, path_to_save=None):
+    _,squares_with_data = load_data_from_file(path_to_load)
 
-    most_interesting_squares_with_count = count_data_in_squares(squares, data)
+    most_interesting_squares_with_count = count_data_in_squares(squares_with_data)
 
     how_many = 50
     if how_many > len(most_interesting_squares_with_count):
@@ -286,20 +285,14 @@ def find_most_popular_locations(board, resolution=10000, path_to_save=None):
 
     return most_interesting_squares_with_count
 
-
-def count_data_in_squares(squares, data):
+# [ (s1,[d1,d2,d3,d4,...]) , .... ]
+def count_data_in_squares(squares_with_data):
     to_ret = []
-    for s in squares:
-        lat1, lat2 = min(s)[0], max(s)[0]
-        lon1, lon2 = min(s)[1], max(s)[1]
-        square_mask = (data['Latitude'].between(lat1, lat2)) & (data['Longitude'].between(lon1, lon2))
-        count = square_mask.sum()
+    for i in range(len(squares_with_data)):
+        s, data = squares_with_data[i]
+        count = len(data)
         if count != 0:
             to_ret.append((s, count))
-        if lat1 > lat2 or lon1 > lon2:
-            print("Something is wrong in assign to square")
-            print(s)
-    # sort list from most to lowest
     to_ret.sort(key=lambda x: x[1], reverse=True)
     return to_ret
 
