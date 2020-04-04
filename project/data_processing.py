@@ -30,6 +30,9 @@ def get_data_region(city_points):
     chunksize = 3 * 10 ** 6
     for chunk in pd.read_csv(globs.general.DATA_BASE_FILTER_PATH_SORTED, chunksize=chunksize):
         last = chunk['Latitude'].iloc[-1]
+        # first = chunk['Latitude'].iloc[1]
+        if last < lat1:
+            continue
         latitude_mask = (~chunk['Latitude'].isna()) & (chunk['Latitude'].between(lat1, lat2))
         latitude_filtered_data = chunk[latitude_mask]
         # Check longitude
@@ -45,7 +48,7 @@ def get_data_region(city_points):
         # add to return data
         list_of_chunks.append(filtered_data_chunk)
 
-        if last > lat1:
+        if last > lat2:
             break
     # squash all DF's to one DF
     return pd.concat(list_of_chunks)
@@ -54,14 +57,33 @@ def get_data_region(city_points):
 # It returns [ (s1,[d1,d2,d3,d4,...]) , .... ]
 def assign_data_to_square(squares, data):
     to_ret = []
-    for s in squares:
+    for i in range(len(squares)):
+        if i >= len(squares):
+            break
+        s = squares[i]
         lat1, lat2 = min(s)[0], max(s)[0]
         lon1, lon2 = min(s)[1], max(s)[1]
-        square_mask = (data['Latitude'].between(lat1, lat2)) & (data['Longitude'].between(lon1, lon2))
+
+        curr_lat_data = data[data['Latitude'].between(lat1, lat2)]
+
+        tmp_squares = []
+
+        for j in range(len(squares)):
+            if j >= len(squares):
+                break
+            s2 = squares[j]
+            if lat1 == min(s2)[0] and lat2 == max(s2)[0]:
+                tmp_squares.append(s2)
+                squares.pop(j)
+
+        for j in range(len(tmp_squares)):
+            curr_square = tmp_squares[j]
+            lon1, lon2 = min(curr_square)[1], max(curr_square)[1]
+            to_ret.append((curr_square, curr_lat_data[curr_lat_data['Longitude'].between(lon1, lon2)]))
+
         if lat1 > lat2 or lon1 > lon2:
             print("Something is wrong in assign to square")
             print(s)
-        to_ret.append((s, data[square_mask]))
     return to_ret
 
 

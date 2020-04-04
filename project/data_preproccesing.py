@@ -98,17 +98,17 @@ def data_distribution(path_to_file,path_value_buckets,path_value_plot,path_heigh
         os.remove(path_value_buckets)
 
     with open(path_value_buckets, 'w+') as filehandle:
-        filehandle.write('Data distribution\nVals')
-        filehandle.write('%s\n'.format(str(vals)))
-        filehandle.write('Bins')
-        filehandle.write('%s\n'.format(str(bins)))
+        filehandle.write('Data distribution\nVals\n')
+        filehandle.write('{}\n'.format(str(vals)))
+        filehandle.write('Bins\n')
+        filehandle.write('{}\n'.format(str(bins)))
 
     plt.fill_between(bins, np.concatenate(([0], vals)), step="pre")
     plt.savefig(path_value_plot, dpi=600)
     plt.clf()
 
     fig, ax = plt.subplots()
-    df.hist(column='Height', bins=bins, ax=ax)
+    df.hist(column='Height', bins=120, ax=ax)
     fig.savefig(path_height_plot, dpi=600)
     plt.clf()
     # plt.cla()
