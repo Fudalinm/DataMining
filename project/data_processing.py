@@ -277,11 +277,11 @@ def find_most_popular_locations(path_to_load, path_to_save=None):
 
     if path_to_save is not None:
         most_interesting_squares = [i[0] for i in most_interesting_squares_with_count]
-        squares_with_data = assign_data_to_square(most_interesting_squares, data)
+        # squares_with_data = assign_data_to_square(most_interesting_squares)
         if os.path.exists(path_to_save):
             os.remove(path_to_save)
         with open(path_to_save, "w+b") as fp:
-            pickle.dump([most_interesting_squares_with_count, squares_with_data], fp)
+            pickle.dump([most_interesting_squares_with_count], fp)
 
     return most_interesting_squares_with_count
 
