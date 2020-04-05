@@ -265,7 +265,7 @@ def load_data_from_file(file, verbose=False):
 
 
 def find_most_popular_locations(path_to_load, path_to_save=None):
-    _,squares_with_data = load_data_from_file(path_to_load)
+    _, squares_with_data = load_data_from_file(path_to_load)
 
     most_interesting_squares_with_count = count_data_in_squares(squares_with_data)
 
@@ -276,14 +276,41 @@ def find_most_popular_locations(path_to_load, path_to_save=None):
     most_interesting_squares_with_count = most_interesting_squares_with_count[:how_many]
 
     if path_to_save is not None:
-        most_interesting_squares = [i[0] for i in most_interesting_squares_with_count]
-        # squares_with_data = assign_data_to_square(most_interesting_squares)
         if os.path.exists(path_to_save):
             os.remove(path_to_save)
         with open(path_to_save, "w+b") as fp:
             pickle.dump([most_interesting_squares_with_count], fp)
 
     return most_interesting_squares_with_count
+
+
+def load_most_popular_locations(most_popular_file, data_file=None, verbose=False, how_many=-1):
+    if verbose:
+        print("Loading data")
+    squares_with_count = pickle.load(open(most_popular_file, "rb"))
+    squares_with_count = squares_with_count[0]
+    # squares, count = squares_with_count
+    if how_many == -1:
+        how_many = len(squares_with_count) - 1
+    if verbose:
+        print(squares_with_count[:3])
+    to_ret = []
+    if data_file is not None:
+        _, squares_with_data = load_data_from_file(data_file, verbose=False)
+
+        for i in range(min(len(squares_with_count),how_many)):
+            current_square = squares_with_count[i][0]
+            for j in range(len(squares_with_data)):
+                # squares_with_data = [(s1, [d1, d2, d3, d4, ...]), ....]
+                if current_square == squares_with_data[j][0]:
+                    to_ret.append((current_square, squares_with_count[i][1], squares_with_data[j][1]))
+                    break
+    else:
+        for i in range(min(len(squares_with_count),how_many)):
+            to_ret.append((squares_with_count[i][0], squares_with_count[i][1], None))
+    # [[square,count,[d1,d2,d3]]]
+    return to_ret
+
 
 # [ (s1,[d1,d2,d3,d4,...]) , .... ]
 def count_data_in_squares(squares_with_data):
