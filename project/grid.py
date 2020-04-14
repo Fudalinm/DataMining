@@ -2,7 +2,7 @@ import globs
 import numpy as np
 import math
 import concurrent
-from mpl_toolkits.basemap import Basemap
+# from mpl_toolkits.basemap import Basemap
 
 
 class Point:
@@ -59,7 +59,7 @@ class Point:
 
 
 def create_earth_grid(start, end):
-    bm = Basemap(resolution='c')
+    # bm = Basemap(resolution='c')
     grid = []
     for i in range(start, end, 5000):
         latitude_degree_north = (-(i / globs.general.MERIDIAN_LENGTH) * 180 + 90) * (math.pi / 180)
@@ -96,8 +96,8 @@ def create_earth_grid(start, end):
                    points_south[(k + 1) % len(points_south)]]
             # checking if the square is on land
 
-            if bm.is_land(tmp[0].longitude, tmp[0].latitude):
-                squares.append(tmp)
+            # if bm.is_land(tmp[0].longitude, tmp[0].latitude):
+            #     squares.append(tmp)
 
         print(latitude_degree_south)
         grid.extend(squares)

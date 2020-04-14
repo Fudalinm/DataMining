@@ -1,3 +1,6 @@
-.idea
-firstTry
+.idea/
+firstTry/
 grid.npy
+raports/
+venv/
+./ipynb_checkpoints/
