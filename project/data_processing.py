@@ -222,10 +222,11 @@ def calculate_correlation_sea_level_radiation(location=None, verbose=False):
     return pearson_corr, spearman_corr
 
 
-def calculate_and_save_covariance_matrix(region_points, path=None):
+def calculate_and_save_covariance_matrix(region_points, path=None,drop_height=False):
     import seaborn as sns
     df = get_data_region(region_points)
-
+    if drop_height:
+        df = df[df['Height'].notnull()]
     if path is not None:
         import os
         if not os.path.exists(path):
@@ -236,7 +237,9 @@ def calculate_and_save_covariance_matrix(region_points, path=None):
         colormap = plt.cm.viridis
         plt.figure(figsize=(12, 12))
         plt.title('Pearson Correlation of Features', y=1.05, size=15)
-        sns.heatmap(df.corr(method='pearson'), linewidths=0.1, vmax=1.0,
+        x = df.corr(method='pearson')
+        print(x)
+        sns.heatmap(x, linewidths=0.1, vmax=1.0,
                     square=True, cmap=colormap, linecolor='white', annot=True)
         plt.savefig(path + 'pearson.png')
 
