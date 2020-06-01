@@ -44,9 +44,14 @@ def get_data_region(city_points):
             longitude_mask = (~latitude_filtered_data['Longitude'].isna()) & \
                              (latitude_filtered_data['Longitude'].between(lon1, lon2))
 
-        filtered_data_chunk = latitude_filtered_data[longitude_mask]
+        filtered_lon_data_chunk = latitude_filtered_data[longitude_mask]
+
+        filtered_lon_data_chunk['Captured Time'] = pd.to_datetime(filtered_lon_data_chunk['Captured Time'])
+        date_mask = filtered_lon_data_chunk['Captured Time'].dt.year <= 2020
+        radiation_mask = filtered_lon_data_chunk['Value'].between(0, 100000)
+
         # add to return data
-        list_of_chunks.append(filtered_data_chunk)
+        list_of_chunks.append(filtered_lon_data_chunk[date_mask & radiation_mask])
 
         if last > lat2:
             break
@@ -222,7 +227,7 @@ def calculate_correlation_sea_level_radiation(location=None, verbose=False):
     return pearson_corr, spearman_corr
 
 
-def calculate_and_save_covariance_matrix(region_points, path=None,drop_height=False):
+def calculate_and_save_covariance_matrix(region_points, path=None, drop_height=False):
     import seaborn as sns
     df = get_data_region(region_points)
     if drop_height:
@@ -301,7 +306,7 @@ def load_most_popular_locations(most_popular_file, data_file=None, verbose=False
     if data_file is not None:
         _, squares_with_data = load_data_from_file(data_file, verbose=False)
 
-        for i in range(min(len(squares_with_count),how_many)):
+        for i in range(min(len(squares_with_count), how_many)):
             current_square = squares_with_count[i][0]
             for j in range(len(squares_with_data)):
                 # squares_with_data = [(s1, [d1, d2, d3, d4, ...]), ....]
@@ -309,7 +314,7 @@ def load_most_popular_locations(most_popular_file, data_file=None, verbose=False
                     to_ret.append((current_square, squares_with_count[i][1], squares_with_data[j][1]))
                     break
     else:
-        for i in range(min(len(squares_with_count),how_many)):
+        for i in range(min(len(squares_with_count), how_many)):
             to_ret.append((squares_with_count[i][0], squares_with_count[i][1], None))
     # [[square,count,[d1,d2,d3]]]
     return to_ret
@@ -376,6 +381,21 @@ def calculate_correlation_example():
     plt.show()
 
 
+def dump_readable(file):
+    squares_basic_data, squares_with_data = load_data_from_file(file, verbose=True)
+
+    with open(file + 'Readable', "w+") as fp:
+        fp.write("square,mean,std,max\n")
+        for tmp in squares_basic_data:
+            s, mean, std, min, max = tmp
+            fp.write("{};{};{};{};{}\n".format(str(s), mean, std, min, max))
+        fp.write("Raw data for each square\n")
+        for tmp in squares_with_data:
+            s, d = tmp
+            fp.write("{}\n".format(str(s)))
+            fp.write(d.to_csv(sep=";"))
+
+
 if __name__ == "__main__":
     # proceed_region(globs.cities.ROME, file_to_save=globs.cities.ROME_FILE, verbose=True)
     # proceed_region(globs.cities.TOKYO, file_to_save=globs.cities.TOKYO_FILE, verbose=True)
@@ -388,4 +408,8 @@ if __name__ == "__main__":
     # load_data_from_file(globs.cities.CZARNOBYL_FILE, verbose=True)
     #
 
-    calculate_correlation_example()
+    # calculate_correlation_example()
+
+    # proceed_region(globs.cities.ROME, file_to_save=globs.cities.ROME_FILE, verbose=True, resolution=3000)
+    # load_data_from_file(globs.cities.ROME_FILE, verbose=True)
+    dump_readable(globs.cities.ROME_FILE)

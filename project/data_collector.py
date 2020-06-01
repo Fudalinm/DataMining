@@ -15,7 +15,6 @@ import globs
 import grid
 
 
-
 def send_request_one_square(centre, distance):
     if centre.latitude > 90 or centre.latitude < -90 or centre.longitude > 180 or centre.longitude < -180:
         return
